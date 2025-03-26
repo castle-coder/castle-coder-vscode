@@ -9,18 +9,25 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onCommand:uos-capstone-unit2.helloWorld"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
         "command": "uos-capstone-unit2.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "first_command",
+        "title": "first command working?"
       }
     ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
+    "build": "tsc -p ./",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
