@@ -1,0 +1,43 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Castle Chat</title>
+  <style>
+    body { font-family: sans-serif; padding: 1em; }
+    #chat-box { border: 1px solid #ccc; padding: 1em; height: 300px; overflow-y: auto; margin-bottom: 1em; }
+    #user-input { width: 80%; }
+  </style>
+</head>
+<body>
+  <h2>Castle Coder Chat</h2>
+  <div id="chat-box"></div>
+  <input type="text" id="user-input" placeholder="메시지를 입력하세요..." />
+  <button onclick="sendMessage()">보내기</button>
+
+  <script>
+    const vscode = acquireVsCodeApi();
+
+    function sendMessage() {
+      const input = document.getElementById('user-input');
+      const message = input.value.trim();
+      if (!message) return;
+
+      const box = document.getElementById('chat-box');
+      box.innerHTML += `<p><strong>You:</strong> ${message}</p>`;
+      input.value = '';
+
+      vscode.postMessage({ command: 'ask', text: message });
+    }
+
+    window.addEventListener('message', (event) => {
+      const msg = event.data;
+      if (msg.command === 'response') {
+        const box = document.getElementById('chat-box');
+        box.innerHTML += `<p><strong>AI:</strong> ${msg.text}</p>`;
+      }
+    });
+  </script>
+</body>
+</html>

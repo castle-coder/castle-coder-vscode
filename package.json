@@ -1,0 +1,65 @@
+{
+  "name": "castle-coder",
+  "displayName": "Castle Coder",
+  "version": "0.0.1",
+  "publisher": "O_u.chan",
+  "description": "",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "activationEvents": [
+    "onView:castleCoder.openview"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "castlecoder-sidebar-view",
+          "title": "Castle Coder",
+          "icon": "media/castle.svg"
+        }
+      ]
+    },
+    "views": {
+      "castlecoder-sidebar-view": [
+        {
+          "type": "webview",
+          "id": "castleCoder.openview",
+          "name": "Castle Coder",
+          "contextualTitle": "Castle Coder"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "castleCoder.openview",
+        "title": "Castle Coder View"
+      },
+      {
+        "command": "castleCoderSidebar.menu.view",
+        "category": "castle-coder-sidebar-html",
+        "title": "Castle Coder Sidebar HTML",
+        "icon": "$(clear-all)"
+      }
+    ],
+    "menus":{
+      "view/title": [
+        {
+          "command": "castleCoderSidebar.menu.view",
+          "group": "navigation",
+          "when": "view == castleCoder.openview"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./"
+  },
+  "devDependencies": {
+    "typescript": "^5.2.0",
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.99.0"
+  }
+}
