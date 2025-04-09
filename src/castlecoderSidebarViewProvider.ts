@@ -25,7 +25,16 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
     private getHtmlForWebview(webview: vscode.Webview): string {
 
         const scriptUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this._extensionUri, 'media', 'sidebar.js')
+            vscode.Uri.joinPath(this._extensionUri, 'media', 'sidebar', 'sidebar.js')
+        );
+        const sidebarStyleUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this._extensionUri, 'media', 'sidebar', 'sidebar.css')
+          );
+        const chatStartStyleUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this._extensionUri, 'media', 'chat', 'chat_start.css')
+        );
+        const chatIngStyleUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this._extensionUri, 'media', 'chat', 'chat_ing.css')
         );
         const styleResetUri = webview.asWebviewUri(
             vscode.Uri.joinPath(this._extensionUri, 'media', 'reset.css')
@@ -33,9 +42,7 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
         const styleVSCodeUri = webview.asWebviewUri(
             vscode.Uri.joinPath(this._extensionUri, 'media', 'vscode.css')
         );
-        const stylesheetUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this._extensionUri, 'media', 'sidebar.css')
-        );
+          
 
         const nonce = getNonce();
 
@@ -49,31 +56,19 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
     <link rel="stylesheet" href="https://unpkg.com/modern-css-reset/dist/reset.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Muli:wght@300;400;700&display=swap" rel="stylesheet">
 
+
             <link href="${styleResetUri}" rel="stylesheet">
             <link href="${styleVSCodeUri}" rel="stylesheet">
-            
-    <link href="${stylesheetUri}" rel="stylesheet">
+            <link href="${sidebarStyleUri}" rel="stylesheet">
+            <link href="${chatStartStyleUri}" rel="stylesheet">
+            <link href="${chatIngStyleUri}" rel="stylesheet">
             
         </head>
 
         <body>
-        <section class="wrapper">
-  <div class="container">
-        <div class="content">
-            <h2 class="subtitle">Castle Coder</h2>
-            <input type="text" class="ask" placeholder="Ask Castle Coder" name="ask" required>
-            
-            <button class="add-color-button">send</button>
-            
-            <p class="text">Be careful security</p>
-
-            
-        </div>
-  </div>
-        </section>
-        <!--<script nonce="${nonce}" src="${scriptUri}"></script>-->
-  </body>
-
+        <div id="app"></div>
+        <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
+        </body>
         </html>`;
 }
 }
