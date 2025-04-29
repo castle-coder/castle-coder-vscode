@@ -1,34 +1,38 @@
 import { handleStartChat } from './chat_logic.js';
-import './chat_start.css';
-
 
 export function renderStartView() {
-  const app = document.getElementById('app');
+  const startApp = document.getElementById('chat-start-app');
+  if (!startApp) {
+    console.error('Chat start app element not found');
+    return;
+  }
 
-  app.innerHTML = `
-  <div class="start-container">
-    <div class="start-icon">🤖</div>
-    <div class="start-title">Ask Castle Coder</div>
-    <div class="start-description">
-      Castle Coder is your security assistant. Ask anything about code, exploits, or defense.
+  startApp.innerHTML = `
+    <div class="start-container">
+      <div class="start-title">Ask Castle Coder</div>
+      <div class="start-description">
+        Castle Coder is your security assistant. Ask anything about code, exploits, or defense.
+      </div>
+      <div class="chat-input-area">
+        <input type="text" class="ask" id="first-question" placeholder="Ask Castle Coder" />
+        <button id="start-btn" class="add-color-button">Start</button>
+      </div>
     </div>
-    <div class="start-hints">
-      📎 or type <b>#</b> to attach context<br/>
-      @ to chat with extensions<br/>
-      Type / to use commands
-    </div>
-    <div class="chat-input-area">
-      <input type="text" class="ask" id="first-question" placeholder="Ask Castle Coder" />
-      <button class="add-color-button">Start</button>
-    </div>
-  </div>
-`;
+  `;
 
+  const startButton = document.getElementById('start-btn');
+  const firstQuestionInput = document.getElementById('first-question');
 
-  document.getElementById('start-btn').addEventListener('click', () => {
-    const msg = document.getElementById('first-question').value.trim();
-    if (msg) {
-      handleStartChat(msg);  // 입력된 메시지를 로직으로 전달
-    }
-  });
+  if (startButton && firstQuestionInput) {
+    startButton.addEventListener('click', () => {
+      const msg = firstQuestionInput.value.trim();
+      if (msg) {
+        handleStartChat(msg);
+      }
+    });
+  } else {
+    console.error('Start button or input field not found');
+  }
 }
+
+renderStartView();
