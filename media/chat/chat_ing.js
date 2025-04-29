@@ -4,7 +4,7 @@ export function renderChatView(initialMessage) {
     <div class="chat-container">
       <h2>Castle Coder</h2>
       <div class="chatbox" id="chatbox"></div>
-      <input type="text" class="ask" id="ask-input" placeholder="Ask more..." />
+      <textarea class="ask" id="ask-input" placeholder="Ask more..."></textarea>
       <button id="send-btn" class="add-color-button">Send</button>
       <p class="text">Be careful with security.</p>
     </div>
@@ -14,28 +14,25 @@ export function renderChatView(initialMessage) {
   const input = document.getElementById('ask-input');
   const sendButton = document.getElementById('send-btn');
 
-  // 초기 메시지 렌더링
   if (initialMessage) {
     addMessage(chatbox, 'You', initialMessage);
-    addMessage(chatbox, 'Bot', 'This is my response to: ' + initialMessage);
+    addMessage(chatbox, 'Bot', initialMessage);
   }
 
-  // 메시지 전송 함수
   function sendMessage() {
     const message = input.value.trim();
     if (!message) return;
     addMessage(chatbox, 'You', message);
-    addMessage(chatbox, 'Bot', 'This is my response to: ' + message);
+    addMessage(chatbox, 'Bot', message);
     input.value = '';
     chatbox.scrollTop = chatbox.scrollHeight;
   }
 
-  // 버튼 클릭하면 메시지 전송
   sendButton.addEventListener('click', sendMessage);
 
-  // 엔터 키 입력으로도 메시지 전송
   input.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault(); 
       sendMessage();
     }
   });
@@ -45,10 +42,11 @@ function addMessage(chatbox, sender, message) {
   const msgWrapper = document.createElement('div');
   msgWrapper.className = `chat-message ${sender === 'You' ? 'user' : 'bot'}`;
 
+  const formattedMessage = message.replace(/\n/g, '<br>');
+
   msgWrapper.innerHTML = `
     <div class="sender">${sender}</div>
-    <div class="text">${message}</div>
+    <div class="text">${formattedMessage}</div>
   `;
-
   chatbox.appendChild(msgWrapper);
 }
