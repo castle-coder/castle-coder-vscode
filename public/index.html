@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Castle Coder Chat</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    .start-container, .chat-container {
+      padding: 20px;
+    }
+    .add-color-button {
+      margin-left: 10px;
+      padding: 5px 10px;
+    }
+    .chatbox {
+      border: 1px solid #ccc;
+      height: 300px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      padding: 10px;
+    }
+    .chat-message.user {
+      text-align: right;
+      color: blue;
+    }
+    .chat-message.bot {
+      text-align: left;
+      color: green;
+    }
+    #chat-ing-app {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <div id="chat-start-app"></div>
+  <div id="chat-ing-app"></div>
+</div>
+
+<script type="module" src="../media/chat/chat_start.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,29 @@
+/* 입력창 */
+.ask {
+	flex-grow: 1;
+	height: 42px;
+	padding: 0 12px;
+	border: 1px solid #333;
+	border-radius: 8px;
+	background-color: #1e1e1e;
+	color: white;
+	font-size: 14px;
+	outline: none;
+  }
+  
+  /* 버튼 */
+  .add-color-button {
+	padding: 0 20px;
+	height: 42px;
+	border: none;
+	border-radius: 8px;
+	background-color: #238636;
+	color: white;
+	font-weight: bold;
+	cursor: pointer;
+  }
+  
+  .add-color-button:hover {
+	background-color: #2ea043;
+  }
+  
