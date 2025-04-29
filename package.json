@@ -41,14 +41,24 @@
         "category": "castle-coder-sidebar-html",
         "title": "Castle Coder Sidebar HTML",
         "icon": "$(clear-all)"
+      },
+      {
+        "command": "castleCoder.newChat",
+        "title": "New Chat",
+        "icon": "$(add)"
       }
     ],
-    "menus":{
+    "menus": {
       "view/title": [
         {
           "command": "castleCoderSidebar.menu.view",
           "group": "navigation",
           "when": "view == castleCoder.openview"
+        },
+        {
+          "command": "castleCoder.newChat",
+          "when": "view == castleCoder.openview",
+          "group": "navigation"
         }
       ]
     }

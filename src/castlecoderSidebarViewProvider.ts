@@ -1,30 +1,39 @@
 import * as vscode from 'vscode';
 
 export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvider {
-
     public static readonly viewType = 'castleCoder.openview';
-
     private _view?: vscode.WebviewView;
 
     constructor(private readonly _extensionUri: vscode.Uri) {}
 
     resolveWebviewView(
-        webviewView: vscode.WebviewView, 
-        context: vscode.WebviewViewResolveContext, 
+        webviewView: vscode.WebviewView,
+        context: vscode.WebviewViewResolveContext,
         token: vscode.CancellationToken
     ): Thenable<void> | void {
         this._view = webviewView;
 
         webviewView.webview.options = {
             enableScripts: true,
-            localResourceRoots: [this._extensionUri],
+            localResourceRoots: [this._extensionUri]
         };
+
         webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
+    }
+
+    public sendNewChat() {
+        this._view?.webview.postMessage({ type: 'newChat' });
     }
 
     private getHtmlForWebview(webview: vscode.Webview): string {
         const scriptUri = webview.asWebviewUri(
             vscode.Uri.joinPath(this._extensionUri, 'media', 'chat', 'chat_start.js')
+        );
+        const styleResetUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this._extensionUri, 'media', 'reset.css')
+        );
+        const styleVSCodeUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this._extensionUri, 'media', 'vscode.css')
         );
         const sidebarStyleUri = webview.asWebviewUri(
             vscode.Uri.joinPath(this._extensionUri, 'media', 'sidebar', 'sidebar.css')
@@ -34,12 +43,6 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
         );
         const chatIngStyleUri = webview.asWebviewUri(
             vscode.Uri.joinPath(this._extensionUri, 'media', 'chat', 'chat_ing.css')
-        );
-        const styleResetUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this._extensionUri, 'media', 'reset.css')
-        );
-        const styleVSCodeUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this._extensionUri, 'media', 'vscode.css')
         );
 
         const nonce = getNonce();

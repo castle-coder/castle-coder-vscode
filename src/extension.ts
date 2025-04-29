@@ -22,6 +22,11 @@ export function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  context.subscriptions.push(
+    vscode.commands.registerCommand('castleCoder.newChat', () => {
+        provider.sendNewChat();
+    })
+);
   let openWebView = vscode.commands.registerCommand('castleCoder.openChatView', () => {
     const message = "Chat View is opened";
     vscode.window.showInformationMessage(message);

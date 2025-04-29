@@ -14,7 +14,7 @@ export function renderStartView() {
         Castle Coder is your security assistant. Ask anything about code, exploits, or defense.
       </div>
       <div class="chat-input-area">
-        <input type="text" class="ask" id="first-question" placeholder="Ask Castle Coder" />
+        <textarea class="ask" id="first-question" placeholder="Ask Castle Coder"></textarea>
         <button id="start-btn" class="add-color-button">Start</button>
       </div>
     </div>
@@ -30,9 +30,26 @@ export function renderStartView() {
         handleStartChat(msg);
       }
     });
+
+    firstQuestionInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        const msg = firstQuestionInput.value.trim();
+        if (msg) {
+          handleStartChat(msg);
+        }
+      }
+    });
   } else {
     console.error('Start button or input field not found');
   }
 }
 
 renderStartView();
+
+window.addEventListener('message', (event) => {
+  const message = event.data;
+  if (message.type === 'newChat') {
+    location.reload();
+  }
+});
