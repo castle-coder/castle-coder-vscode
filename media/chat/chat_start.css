@@ -1,55 +1,75 @@
-/* 전체 wrapper */
+html, body { height:100%; margin:0; padding:0; }
+
 .start-container {
-    height: 100%;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 24px;
-    box-sizing: border-box;
-    background-color: #0f0f0f;
-    color: #d4d4d4;
-    font-family: sans-serif;
-  }
-  
-  /* 아이콘 (옵션) */
-  .start-icon {
-    font-size: 48px;
-    margin-bottom: 24px;
-    color: #666;
-  }
-  
-  /* 타이틀 */
-  .start-title {
-    font-size: 24px;
-    font-weight: bold;
-    color: #ffffff;
-    margin-bottom: 12px;
-  }
-  
-  /* 서브 텍스트 */
-  .start-description {
-    font-size: 14px;
-    color: #aaa;
-    margin-bottom: 24px;
-    max-width: 400px;
-    line-height: 1.5;
-  }
-  
-  /* 힌트 섹션 */
-  .start-hints {
-    font-size: 13px;
-    color: #888;
-    line-height: 1.8;
-    margin-bottom: 32px;
-  }
-  
-  /* 입력창과 버튼 (선택) */
-  .chat-input-area {
-    display: flex;
-    flex-direction: row;
-    gap: 8px;
-    margin-top: auto;
-  }
+  height: calc(100% - 80px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 24px;
+  box-sizing: border-box;
+  background-color: #0f0f0f;
+  color: #d4d4d4;
+  font-family: sans-serif;
+}
+
+.start-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+.start-description {
+  font-size: 14px;
+  color: #aaa;
+  margin-bottom: 24px;
+  max-width: 400px;
+  line-height: 1.5;
+}
+
+/* 하단 입력영역 */
+.chat-input-area {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+}
+
+.input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+#first-question {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 68px 8px 8px; /* 버튼 공간 확보 */
+  background: transparent;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+  resize: none;
+  outline: none;
+}
+
+/* 버튼 크기 고정 (채팅 가로 길이의 1/10 정도) */
+#start-btn {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 60px;
+  height: 24px;
+  background-color: #3a914b;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+#first-question {
+  overflow: hidden;
+  /* height 초기값은 JS에서 세팅 */
+}

@@ -46,6 +46,10 @@
         "command": "castleCoder.newChat",
         "title": "New Chat",
         "icon": "$(add)"
+      },
+      {
+        "command": "castleCoder.securityRefactor",
+        "title": "Castle Coder: Security Refactor"
       }
     ],
     "menus": {
@@ -59,6 +63,13 @@
           "command": "castleCoder.newChat",
           "when": "view == castleCoder.openview",
           "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "castleCoder.securityRefactor",
+          "when": "editorTextFocus && editorHasSelection",
+          "group": "2_modification"
         }
       ]
     }

@@ -25,6 +25,18 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
         this._view?.webview.postMessage({ type: 'newChat' });
     }
 
+    public sendUserPrompt(prompt: string) {
+        if ( !this._view) {
+            console.warn('WebviewView is not yet resolved');
+            return;
+        }
+        this._view?.webview.postMessage({
+            type: 'userPrompt',
+            prompt,
+            meta: 'securityRefactor'
+        });
+    }
+
     private getHtmlForWebview(webview: vscode.Webview): string {
         const scriptUri = webview.asWebviewUri(
             vscode.Uri.joinPath(this._extensionUri, 'media', 'chat', 'chat_start.js')

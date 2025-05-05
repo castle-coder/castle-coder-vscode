@@ -16,9 +16,10 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('castleCoder.openview', () => {
-      const message = "Menu/Title of extension is clicked";
-      vscode.window.showInformationMessage(message);
+    vscode.commands.registerCommand('castleCoder.openview', async () => {
+      await vscode.commands.executeCommand(
+        'workbench.view.extension.castlecoder-sidebar-view'
+      )
     })
   );
 
@@ -27,6 +28,32 @@ export function activate(context: vscode.ExtensionContext) {
         provider.sendNewChat();
     })
 );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('castleCoder.securityRefactor', async () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        vscode.window.showWarningMessage('No active editor found');
+        return;
+      }
+
+      const selection = editor.selection;
+      const code = editor.document.getText(selection).trim();
+      if (!code) {
+        vscode.window.showWarningMessage('Select code to refactor');
+        return;
+      }
+
+      // sidebar activataiton
+      await vscode.commands.executeCommand('castleCoder.openview');
+
+      await new Promise((r) => setTimeout(r, 50));
+
+      // send code to prompt
+      const prompt = `refacotor the code to be more secure - the following code snippet : \n\n${code}`;
+      provider.sendUserPrompt(prompt);
+    })
+  )
   let openWebView = vscode.commands.registerCommand('castleCoder.openChatView', () => {
     const message = "Chat View is opened";
     vscode.window.showInformationMessage(message);
