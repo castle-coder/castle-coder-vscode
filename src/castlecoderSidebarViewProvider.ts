@@ -39,22 +39,22 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
 
     private getHtmlForWebview(webview: vscode.Webview): string {
         const scriptUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this._extensionUri, 'media', 'chat', 'chat_start.js')
+            vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'chat', 'chat_start.js')
         );
         const styleResetUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this._extensionUri, 'media', 'reset.css')
+            vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'assests', 'reset.css')
         );
         const styleVSCodeUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this._extensionUri, 'media', 'vscode.css')
+            vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'assests', 'vscode.css')
         );
         const sidebarStyleUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this._extensionUri, 'media', 'sidebar', 'sidebar.css')
+            vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'sidebar', 'sidebar.css')
         );
         const chatStartStyleUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this._extensionUri, 'media', 'chat', 'chat_start.css')
+            vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'chat', 'chat_start.css')
         );
         const chatIngStyleUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this._extensionUri, 'media', 'chat', 'chat_ing.css')
+            vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'chat', 'chat_ing.css')
         );
 
         const nonce = getNonce();
