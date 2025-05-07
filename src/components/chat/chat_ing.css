@@ -1,103 +1,106 @@
-html, body {
+/* src/components/chat/chat_ing.css */
+
+/* 1) 기본 리셋 및 박스 설정 */
+html, body, #app, #chat-ing-app {
+  width: 100%;
   height: 100%;
   margin: 0;
   padding: 0;
-}
-
-.chat-container {
-  height: calc(100% - 80px);
-  display: flex;
-  flex-direction: column;
-  padding: 20px;
   box-sizing: border-box;
-  background-color: #0f0f0f;
-  color: #d4d4d4;
-  font-family: sans-serif;
 }
 
-h2 {
-  margin: 0 0 10px;
-}
-
-.chatbox {
-  flex: 1;
+/* 2) 웹뷰 루트: Flex 컨테이너로 세로 정렬 */
+#chat-ing-app {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  border: 1px solid #555;
-  border-radius: 4px;
-  padding: 10px;
-  overflow-y: auto;
-  margin-bottom: 10px;
+  height: 100%;
 }
 
-/* 메시지 공통 스타일 */
-.chat-message {
-  max-width: 80%;
-  padding: 8px 12px;
-  border-radius: 8px;
-  display: inline-block;
-  word-break: break-word;
+/* 3) 실제 채팅 UI 전체 래퍼 */
+#chat-ing-app .chat-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;               /* 남은 공간 모두 차지 */
+  padding: 16px;
+  background: #0f0f0f;
+  box-sizing: border-box;
 }
 
-/* You 메시지 (오른쪽 정렬, 파란 계열 배경) */
-.chat-message.user {
-  align-self: flex-end;
-  background-color: rgba(26, 115, 232, 0.2);
-  color: #e0f2ff;
+/* 4) 채팅 기록 박스 */
+#chat-ing-app .chat-container .chatbox {
+  display: flex;            /* Flex 컨테이너로 변경 */
+  flex-direction: column;   /* 수직 스택 */
+  flex: 1;                  /* 남는 공간 모두 차지 */
+  overflow-y: auto;         /* 스크롤 */
+  background: #1e1e1e;      /* 짙은 배경 */
+  border: 1px solid #555;   /* 연한 테두리 */
+  border-radius: 8px;       /* 둥근 모서리 */
+  padding: 8px;             /* 내부 여백 */
+  box-sizing: border-box;   /* 크기 계산 포함 */
+  margin-bottom: 12px;      /* 입력창과 간격 */
 }
 
-/* Bot 메시지 (왼쪽 정렬, 회색 계열 배경) */
-.chat-message.bot {
-  align-self: flex-start;
-  background-color: rgba(100, 100, 100, 0.2);
+/* 5) 사용자 메시지 (You) */
+#chat-ing-app .chatbox .chat-message.user {
+  align-self: flex-end;      /* 우측 정렬 */
+  background: rgba(26, 115, 232, 0.8);
   color: #fff;
+  border-radius: 8px;
+  margin: 4px 0;
+  padding: 6px 10px;
+  max-width: 80%;
 }
 
-/* 보낸 사람 라벨 */
-.chat-message .sender {
-  font-weight: bold;
-  margin-bottom: 4px;
+/* 6) 봇 메시지 (Bot) */
+#chat-ing-app .chatbox .chat-message.bot {
+  align-self: flex-start;    /* 좌측 정렬 */
+  background: rgba(50, 50, 50, 0.8);
+  color: #fff;
+  border-radius: 8px;
+  margin: 4px 0;
+  padding: 6px 10px;
+  max-width: 80%;
 }
 
-/* 하단 입력영역 */
-.chat-input-area {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  right: 20px;
-}
-
-.input-wrapper {
+/* 7) 입력창 래퍼 */
+#chat-ing-app .chat-container .chat-input-area {
   position: relative;
-  width: 100%;
 }
 
-#ask-input {
-  width: 100%;
+/* 8) 텍스트 입력창 */
+#chat-ing-app textarea#ask-input {
+  width: calc(100% - 80px);  /* Send 버튼 영역 제외 */
   min-height: 40px;
-  padding: 8px 68px 8px 8px;
+  padding: 6px 8px;
   background: transparent;
   border: 1px solid #555;
   border-radius: 4px;
   color: #fff;
   font-size: 14px;
   resize: none;
-  outline: none;
   overflow: hidden;
+  outline: none;
+  box-sizing: border-box;
 }
 
-/* Send 버튼 */
-#send-btn {
+/* 9) 전송 버튼 */
+#chat-ing-app button#send-btn {
   position: absolute;
   right: 8px;
   bottom: 8px;
   width: 60px;
-  height: 24px;
-  background-color: #3a914b;
+  height: 28px;
+  background: #3a914b;
   border: none;
   border-radius: 4px;
-  color: white;
-  font-size: 12px;
+  color: #fff;
+  font-size: 14px;
   cursor: pointer;
+}
+
+/* 10) 보조 안내 문구 */
+#chat-ing-app .chat-container .text {
+  margin: 8px 0 0;
+  color: #ccc;
+  font-size: 12px;
 }

@@ -1,34 +1,38 @@
 // src/extension.ts
+
 import * as vscode from 'vscode';
 import { CastleCoderSidebarViewProvider } from './castlecoderSidebarViewProvider';
 
 export function activate(context: vscode.ExtensionContext) {
-
-  console.log("🟢 Castle Coder ChatViewProvider activated");
+  console.log('🟢 Castle Coder activated');
 
   const provider = new CastleCoderSidebarViewProvider(context.extensionUri);
 
+  // 1) 사이드바 뷰 프로바이더 등록
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
-        CastleCoderSidebarViewProvider.viewType,
+      CastleCoderSidebarViewProvider.viewType,
       provider
     )
   );
 
+  // 2) 명령어: 사이드바 열기
   context.subscriptions.push(
     vscode.commands.registerCommand('castleCoder.openview', async () => {
       await vscode.commands.executeCommand(
         'workbench.view.extension.castlecoder-sidebar-view'
-      )
+      );
     })
   );
 
+  // 3) 명령어: 새 채팅 시작
   context.subscriptions.push(
     vscode.commands.registerCommand('castleCoder.newChat', () => {
-        provider.sendNewChat();
+      provider.sendNewChat();
     })
-);
+  );
 
+  // 4) 명령어: 코드 보안 리팩터링
   context.subscriptions.push(
     vscode.commands.registerCommand('castleCoder.securityRefactor', async () => {
       const editor = vscode.window.activeTextEditor;
@@ -36,53 +40,34 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showWarningMessage('No active editor found');
         return;
       }
-
       const selection = editor.selection;
       const code = editor.document.getText(selection).trim();
       if (!code) {
-        vscode.window.showWarningMessage('Select code to refactor');
+        vscode.window.showWarningMessage('Select some code to refactor');
         return;
       }
 
-      // sidebar activataiton
+      // 사이드바 활성화
       await vscode.commands.executeCommand('castleCoder.openview');
-
+      // 잠시 딜레이를 줘야 웹뷰가 렌더링됨
       await new Promise((r) => setTimeout(r, 50));
 
-      // send code to prompt
-      const prompt = `refacotor the code to be more secure - the following code snippet : \n\n${code}`;
+      // 사용자 프롬프트 전송
+      const prompt = `Refactor the following code to be more secure:\n\n${code}`;
       provider.sendUserPrompt(prompt);
     })
-  )
-  let openWebView = vscode.commands.registerCommand('castleCoder.openChatView', () => {
-    const message = "Chat View is opened";
-    vscode.window.showInformationMessage(message);
-  });
+  );
 
-  context.subscriptions.push(openWebView);
-
+  // 5) (선택) 테스트용 명령어
+  const openChatView = vscode.commands.registerCommand(
+    'castleCoder.openChatView',
+    () => {
+      vscode.window.showInformationMessage('Chat view opened');
+    }
+  );
+  context.subscriptions.push(openChatView);
 }
 
-// class ChatViewProvider implements vscode.WebviewViewProvider {
-
-//   public static readonly viewType = ''
-
-//   constructor(private readonly extensionUri: vscode.Uri) {}
-
-//   resolveWebviewView(view: vscode.WebviewView) {
-//     const htmlPath = path.join(this.extensionUri.fsPath, 'webview', 'chat.html');
-//     const html = fs.readFileSync(htmlPath, 'utf8');
-
-//     view.webview.options = { enableScripts: true };
-//     view.webview.html = html;
-
-//     view.webview.onDidReceiveMessage((message) => {
-//       if (message.command === 'ask') {
-//         const fakeReply = `🧠 응답: "${message.text}"에 대한 가짜 답변입니다`;
-//         view.webview.postMessage({ command: 'response', text: fakeReply });
-//       }
-//     });
-//   }
-// }
-
-export function deactivate() {}
+export function deactivate() {
+  // Cleanup if necessary
+}
