@@ -1,75 +1,30 @@
-html, body { height:100%; margin:0; padding:0; }
-
-.start-container {
-  height: calc(100% - 80px);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  padding: 24px;
-  box-sizing: border-box;
-  background-color: #0f0f0f;
-  color: #d4d4d4;
-  font-family: sans-serif;
+html, body, #app, #chat-start-app {
+  width:100%; height:100%; margin:0; padding:0; box-sizing:border-box;
 }
-
-.start-title {
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 12px;
+#chat-start-app .start-container {
+  display:flex; flex-direction:column; justify-content:space-between;
+  height:100%; background:#1e1e1e; padding:24px 16px; box-sizing:border-box;
 }
-
-.start-description {
-  font-size: 14px;
-  color: #aaa;
-  margin-bottom: 24px;
-  max-width: 400px;
-  line-height: 1.5;
+#chat-start-app .start-container .start-header {
+  text-align:center;
 }
-
-/* 하단 입력영역 */
-.chat-input-area {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  right: 20px;
+#chat-start-app .start-container .start-header h1 {
+  margin:0 0 8px; font-size:28px; color:#f0f0f0;
 }
-
-.input-wrapper {
-  position: relative;
-  width: 100%;
+#chat-start-app .start-container .start-header p {
+  margin:0; font-size:14px; color:#bbb; line-height:1.4;
 }
-
-#first-question {
-  width: 100%;
-  min-height: 40px;
-  padding: 8px 68px 8px 8px; /* 버튼 공간 확보 */
-  background: transparent;
-  border: 1px solid #555;
-  border-radius: 4px;
-  color: #fff;
-  font-size: 14px;
-  resize: none;
-  outline: none;
+#chat-start-app .start-container .chat-input-area {
+  position:relative;
 }
-
-/* 버튼 크기 고정 (채팅 가로 길이의 1/10 정도) */
-#start-btn {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  width: 60px;
-  height: 24px;
-  background-color: #3a914b;
-  border: none;
-  border-radius: 4px;
-  color: white;
-  font-size: 12px;
-  cursor: pointer;
+#chat-start-app .start-container textarea#first-question {
+  width:100%; min-height:40px; padding:8px 70px 8px 8px;
+  background:transparent; border:1px solid #555; border-radius:4px;
+  color:#fff; font-size:14px; resize:none; overflow:hidden; outline:none;
+  box-sizing:border-box;
 }
-
-#first-question {
-  overflow: hidden;
-  /* height 초기값은 JS에서 세팅 */
+#chat-start-app .start-container button#start-btn {
+  position:absolute; right:8px; bottom:8px;
+  width:60px; height:28px; background:#3a914b; border:none;
+  border-radius:4px; color:#fff; font-size:14px; cursor:pointer;
 }

@@ -1,6 +1,7 @@
 # castle-coder-vscode
 
 1. login 기능 추가
+    - ~~css : login, register, chat_start, chat_ing 분리 및 재정의~~
 2. chatting 기록 저장 어떻게 할 지 
     - localStorage
     - server : 다중 디바이스 지원에 필요 - 굳이 사용하지 않아도 될 듯 싶다.

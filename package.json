@@ -8,7 +8,10 @@
     "vscode": "^1.60.0"
   },
   "activationEvents": [
-    "onView:castleCoder.openview"
+    "onView:castleCoder.openview",
+    "onCommand:castleCoder.openview",
+    "onCommand:castleCoder.newChat",
+    "onCommand:castleCoder.securityRefactor"
   ],
   "main": "./out/extension.js",
   "contributes": {
