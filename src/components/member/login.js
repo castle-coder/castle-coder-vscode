@@ -7,8 +7,8 @@ export function renderLoginView() {
   memberApp.innerHTML = `
     <div class="form-container">
       <h2>Login</h2>
-      <input id="login-id" placeholder="ID" />
-      <input id="login-pw" type="password" placeholder="Password" />
+      <input id="login-email" type="email" placeholder="Email" />
+      <input id="login-password" type="password" placeholder="Password" />
       <div class="form-buttons">
         <button id="login-btn">Login</button>
         <button id="register-btn">Register</button>
@@ -18,13 +18,28 @@ export function renderLoginView() {
   memberApp.style.display = 'block';
   
   document.getElementById('login-btn').addEventListener('click', () => {
-    const id = document.getElementById('login-id').value;
-    const pw = document.getElementById('login-pw').value;
-    // mock 검사
-    if (id === 'admin' && pw === '1234') {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+
+    // 기본적인 유효성 검사
+    if (!email || !password) {
+      alert('Please fill in all fields');
+      return;
+    }
+
+    // 이메일 형식 검사
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      alert('Please enter a valid email address');
+      return;
+    }
+
+    // TODO: 실제 로그인 API 호출
+    // 임시로 admin@example.com / 123456 으로 테스트
+    if (email === 'admin@example.com' && password === '123456') {
       onLoginSuccess();
     } else {
-      alert('잘못된 자격증명');
+      alert('Invalid email or password');
     }
   });
 
