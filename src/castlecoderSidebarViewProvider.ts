@@ -22,7 +22,7 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
 
     webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
 
-    // inject baseUrl
+    // Send baseUrl to webview
     webviewView.webview.postMessage({ command: 'setBaseUrl', baseUrl: this.baseUrl });
 
     // handle messages from webview
@@ -71,27 +71,47 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
   private getHtmlForWebview(webview: vscode.Webview): string {
     const nonce = this.getNonce();
 
+    // 1) API 호출을 허용하는 CSP 정의
+    const csp = `
+      default-src 'none';
+      connect-src 'self' http://13.125.85.38:8080/api/v1 http://13.125.85.38:8080;
+      img-src ${webview.cspSource};
+      script-src 'nonce-${nonce}' 'unsafe-inline';
+      style-src ${webview.cspSource} 'unsafe-inline';
+      font-src ${webview.cspSource};
+    `.replace(/\s+/g, ' ');
+
     // resource URIs
     const authScriptUri      = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'member', 'auth.js'));
     const loginScriptUri     = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'member', 'login.js'));
+    const loginStyleUri      = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'member', 'css', 'login.css'));
+    
     const registerScriptUri  = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'member', 'register.js'));
+    const registerStyleUri   = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'member', 'css', 'register.css'));
+    
     const chatLogicUri       = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'chat', 'chat_logic.js'));
     const chatStartUri       = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'chat', 'chat_start.js'));
-    const chatIngUri         = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'chat', 'chat_ing.js'));
-
-    const loginStyleUri      = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'member', 'css', 'login.css'));
-    const registerStyleUri   = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'member', 'css', 'register.css'));
     const chatStartStyleUri  = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'chat', 'chat_start.css'));
+    const chatIngUri         = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'chat', 'chat_ing.js'));
     const chatIngStyleUri    = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'chat', 'chat_ing.css'));
+
 
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource}; script-src 'nonce-${nonce}'; style-src ${webview.cspSource};">
+  <meta http-equiv="Content-Security-Policy" content="${csp}">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="${loginStyleUri}" rel="stylesheet" />
+
+  <!-- inline baseUrl 설정 (CSP nonce 허용) -->
+  <script nonce="${nonce}">
+    window.baseUrl = "http://13.125.85.38:8080/api/v1";
+  </script>
+
+  <!-- 스타일 로드 --> 
   <link href="${registerStyleUri}" rel="stylesheet" />
+
+  <link href="${loginStyleUri}" rel="stylesheet" />
   <link href="${chatStartStyleUri}" rel="stylesheet" />
   <link href="${chatIngStyleUri}" rel="stylesheet" />
 </head>

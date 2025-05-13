@@ -1,9 +1,17 @@
-// src/components/member/register.js
+// window.addEventListener('message', event => {
+//   if (event.data.command === 'setBaseUrl') {
+//     window.baseUrl = event.data.baseUrl;
+//   }
+// });
+
 export function renderRegisterView() {
   const memberApp = document.getElementById('member-app');
   memberApp.style.display = 'block';
   document.getElementById('chat-start-app').style.display = 'none';
   document.getElementById('chat-ing-app').style.display   = 'none';
+
+  // Initialize baseUrl
+  window.baseUrl = 'http://13.125.85.38:8080/api/v1';
 
   memberApp.innerHTML = `
     <div class="form-container">
@@ -51,10 +59,14 @@ export function renderRegisterView() {
       return;
     }
     try {
-      const res = await fetch(`${base}/member/check-email?email=${encodeURIComponent(email)}`, {
+      const res = await fetch(`${window.baseUrl}/member/check-email?email=${encodeURIComponent(email)}`, {
         method: 'GET',
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
+      console.log('fetch url:', window.baseUrl);
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.message || '이미 등록된 이메일입니다.');
@@ -106,7 +118,7 @@ export function renderRegisterView() {
     }
 
     try {
-      const res = await fetch(`${base}/member/sign-up`, {
+      const res = await fetch(`${window.baseUrl}/member/sign-up`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
