@@ -1,4 +1,3 @@
-// register.js
 export function renderRegisterView() {
   const memberApp = document.getElementById('member-app');
   memberApp.style.display = 'block';
@@ -8,6 +7,7 @@ export function renderRegisterView() {
   memberApp.innerHTML = `
     <div class="form-container">
       <h2>Sign Up</h2>
+      <div id="reg-error" class="error-message"></div>
       <input id="reg-email" type="email" placeholder="Email" />
       <input id="reg-firstname" placeholder="First Name" />
       <input id="reg-lastname" placeholder="Last Name" />
@@ -20,43 +20,61 @@ export function renderRegisterView() {
     </div>
   `;
 
+  const errorDiv = document.getElementById('reg-error');
+
   document.getElementById('btn-register')
     .addEventListener('click', () => {
-      const email = document.getElementById('reg-email').value;
-      const firstName = document.getElementById('reg-firstname').value.toUpperCase();
-      const lastName = document.getElementById('reg-lastname').value.toUpperCase();
-      const password = document.getElementById('reg-password').value;
-      const phoneNumber = document.getElementById('reg-phone').value;
+      errorDiv.textContent = '';
+      const email       = document.getElementById('reg-email').value.trim();
+      const firstName   = document.getElementById('reg-firstname').value.trim();
+      const lastName    = document.getElementById('reg-lastname').value.trim();
+      const password    = document.getElementById('reg-password').value;
+      const phoneNumber = document.getElementById('reg-phone').value.trim();
 
       // 기본적인 유효성 검사
       if (!email || !firstName || !lastName || !password || !phoneNumber) {
-        alert('Please fill in all fields');
+        errorDiv.textContent = '모든 필드를 입력해주세요';
         return;
       }
 
       // 이메일 형식 검사
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
-        alert('Please enter a valid email address');
+        errorDiv.textContent = '유효한 이메일 주소를 입력해주세요';
         return;
       }
 
       // 비밀번호 길이 검사 (최소 6자)
       if (password.length < 6) {
-        alert('Password must be at least 6 characters long');
+        errorDiv.textContent = '비밀번호의 길이는 최소 6자 이상이어야 합니다';
         return;
       }
 
       // 전화번호 형식 검사 (숫자만)
       const phoneRegex = /^\d+$/;
       if (!phoneRegex.test(phoneNumber)) {
-        alert('Please enter a valid phone number (numbers only)');
+        errorDiv.textContent = '전화번호는 숫자만 입력해주세요';
         return;
       }
 
-      // TODO: 실제 회원가입 API 호출
-      alert('Registration successful! Please login.');
-      window.postMessage({ type: 'toLogin' }, '*');
+      // 실제 회원가입 API 호출
+      fetch(`${window.baseUrl}/member/sign-up`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, firstName, lastName, password, phoneNumber })
+      })
+      .then(res => {
+        if (!res.ok) return res.json().then(err => { throw new Error(err.message || '회원가입에 실패했습니다.'); });
+        return res.json();
+      })
+      .then(() => {
+        errorDiv.style.color = 'limegreen';
+        errorDiv.textContent = '회원가입 완료! 로그인해주세요.';
+        window.postMessage({ type: 'toLogin' }, '*');
+      })
+      .catch(err => {
+        errorDiv.textContent = err.message;
+      });
     });
 
   document.getElementById('btn-back')

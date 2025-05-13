@@ -1,9 +1,3 @@
-/* =================================================
-   register.css
-   회원가입 전용 스타일
-   렌더링 컨테이너: #member-app
-   ================================================= */
-
 /* 0) 컨테이너 전체 */
 html, body, #app, #member-app {
   width: 100%;
@@ -102,5 +96,13 @@ html, body, #app, #member-app {
   font-size: 12px;
   margin-top: -8px;
   margin-bottom: 4px;
+  text-align: left;
+}
+
+
+.error-message {
+  color: #ff6b6b;
+  font-size: 12px;
+  margin-bottom: 8px;
   text-align: left;
 }

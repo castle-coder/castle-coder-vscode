@@ -80,3 +80,10 @@ html, body, #app {
 #member-app .form-buttons button:hover {
   background-color: #2d7a3b;
 }
+
+.error-message {
+  color: #ff6b6b;
+  font-size: 12px;
+  margin-bottom: 8px;
+  text-align: left;
+}
