@@ -1,5 +1,3 @@
-import { onLoginSuccess } from './auth.js'; 
-
 export function renderLoginView() {
   const memberApp = document.getElementById('member-app');
   memberApp.innerHTML = `
@@ -16,12 +14,13 @@ export function renderLoginView() {
   `;
   memberApp.style.display = 'block';
 
-  const errorDiv = document.getElementById('login-error');
   
   document.getElementById('login-btn').addEventListener('click', () => {
     errorDiv.textContent = '';
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
+    const errorDiv = document.getElementById('login-error');
+    errorDiv.textContent = '';
 
     // 기본적인 유효성 검사
     if (!email || !password) {
@@ -35,25 +34,13 @@ export function renderLoginView() {
       errorDiv.textContent = '유효한 이메일 주소를 입력해주세요.';
       return;
     }
-
-    // TODO: 실제 로그인 API 호출
-
-    fetch(`${window.baseUrl}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    })
-    .then(res => {
-      if(!res.ok) return res.json().then(err => { throw new Error(err.message || '로그인 실패'); });
-      return res.json();
-    })
-    .then(data => onLoginSuccess(data))
-    .catch(err => {
-      errorDiv.textContent = err.message;
-    });
-  });
+    window.postMessage(
+      { type: 'login', body: { email, password } },
+      '*'
+    )
+  })
 
   document.getElementById('register-btn').addEventListener('click', () => {
-    window.dispatchEvent(new MessageEvent('message', { data: { type: 'toRegister' } }));
+    window.postMessage({ type: 'toRegister' }, '*')
   });
 }

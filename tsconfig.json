@@ -18,6 +18,7 @@
 
 {
 	"compilerOptions": {
+	  "esModuleInterop": true, // 추가한 내용
 	  "module": "commonjs",
 	  "target": "es6",
 	  "outDir": "out",

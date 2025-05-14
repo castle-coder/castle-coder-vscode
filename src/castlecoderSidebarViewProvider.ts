@@ -1,14 +1,15 @@
 // castlecoderSidebarViewProvider.ts
 import * as vscode from 'vscode';
+import axios, { AxiosError, isAxiosError } from 'axios';
 
 export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'castleCoder.openview';
   private _view?: vscode.WebviewView;
-  private readonly baseUrl = 'http://13.125.85.38:8080/api/v1';
+  private baseUrl = 'http://13.125.85.38:8080/api/v1';
 
   constructor(private readonly _extensionUri: vscode.Uri) {}
 
-  resolveWebviewView(
+  public resolveWebviewView(
     webviewView: vscode.WebviewView,
     context: vscode.WebviewViewResolveContext,
     token: vscode.CancellationToken
@@ -22,40 +23,103 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
 
     webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
 
-    // Send baseUrl to webview
-    webviewView.webview.postMessage({ command: 'setBaseUrl', baseUrl: this.baseUrl });
+    
 
-    // handle messages from webview
-    webviewView.webview.onDidReceiveMessage(message => {
+    webviewView.webview.onDidReceiveMessage(async (message: any) => {
       switch (message.type) {
-        case 'login':
-          this.postToServer('/auth/login', message.body);
-          break;
-        case 'signup':
-          this.postToServer('/member/sign-up', message.body);
-          break;
-        case 'newChat':
-          this.sendNewChat();
-          break;
-        case 'userPrompt':
-          this.sendUserPrompt(message.prompt);
-          break;
-        default:
-          break;
-      }
-    });
-  }
 
-  private postToServer(path: string, body: any) {
-    fetch(`${this.baseUrl}${path}`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+        case 'checkEmail':
+          try {
+            const res = await axios.get<{ available: boolean }>(
+              `${this.baseUrl}/member/check-email`,
+              { params: { email: message.email } }
+            )
+            this._view?.webview.postMessage({
+              type: 'checkEmailResult',
+              success: true,
+              available: res.data.available,
+            })
+          } catch (err: unknown) {
+            let errMsg = '이메일 중복 체크 중 알 수 없는 오류가 발생했습니다.'
+            if (isAxiosError(err)) {
+              errMsg = err.response?.data?.message ?? err.message
+            } else if (err instanceof Error) {
+              errMsg = err.message
+            }
+            this._view?.webview.postMessage({
+              type: 'checkEmailResult',
+              success: false,
+              error: errMsg,
+            })
+          }
+          break
+
+        case 'login':
+          try {
+            const res = await axios.post<{ token: string }>(
+              `${this.baseUrl}/auth/login`,
+              message.body,
+              { withCredentials: true }
+            )
+            this._view?.webview.postMessage({
+              type: 'loginResponse',
+              success: true,
+              data: res.data,
+            })
+          } catch (err: unknown) {
+            let errMsg = '로그인 중 알 수 없는 오류가 발생했습니다.'
+            if (isAxiosError(err)) {
+              errMsg = err.response?.data?.message ?? err.message
+            } else if (err instanceof Error) {
+              errMsg = err.message
+            }
+            this._view?.webview.postMessage({
+              type: 'loginError',
+              success: false,
+              error: errMsg,
+            })
+          }
+          break
+
+        case 'signup':
+          try {
+            const res = await axios.post(
+              `${this.baseUrl}/member/sign-up`,
+              message.body
+            )
+            this._view?.webview.postMessage({
+              type: 'signupResponse',
+              success: true,
+              data: res.data,
+            })
+          } catch (err: unknown) {
+            let errMsg = '회원가입 중 알 수 없는 오류가 발생했습니다.'
+            if (isAxiosError(err)) {
+              errMsg = err.response?.data?.message ?? err.message
+            } else if (err instanceof Error) {
+              errMsg = err.message
+            }
+            this._view?.webview.postMessage({
+              type: 'signupError',
+              success: false,
+              error: errMsg,
+            })
+          }
+          break
+
+        case 'newChat':
+          this.sendNewChat()
+          break
+
+        case 'userPrompt':
+          this.sendUserPrompt(message.prompt)
+          break
+
+        default:
+          console.warn('알 수 없는 메시지 타입:', message.type)
+          break
+      }
     })
-      .then(res => res.json())
-      .then(data => this._view?.webview.postMessage({ type: 'loginResponse', data }))
-      .catch(err => this._view?.webview.postMessage({ type: 'loginError', error: err.message }));
   }
 
   public sendNewChat() {
@@ -71,16 +135,6 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
   private getHtmlForWebview(webview: vscode.Webview): string {
     const nonce = this.getNonce();
 
-    // 1) API 호출을 허용하는 CSP 정의
-    const csp = `
-      default-src 'none';
-      connect-src 'self' http://13.125.85.38:8080/api/v1 http://13.125.85.38:8080;
-      img-src ${webview.cspSource};
-      script-src 'nonce-${nonce}' 'unsafe-inline';
-      style-src ${webview.cspSource} 'unsafe-inline';
-      font-src ${webview.cspSource};
-    `.replace(/\s+/g, ' ');
-
     // resource URIs
     const authScriptUri      = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'member', 'auth.js'));
     const loginScriptUri     = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'member', 'login.js'));
@@ -95,18 +149,23 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
     const chatIngUri         = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'chat', 'chat_ing.js'));
     const chatIngStyleUri    = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'chat', 'chat_ing.css'));
 
+    const cspMeta = `
+      <meta http-equiv="Content-Security-Policy"
+        content="
+          default-src 'none';
+          script-src 'nonce-${nonce}' ${webview.cspSource};
+          style-src ${webview.cspSource} 'unsafe-inline';
+          img-src ${webview.cspSource} https:;
+        ">
+    `;
+
 
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
+  ${cspMeta}
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="${csp}">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- inline baseUrl 설정 (CSP nonce 허용) -->
-  <script nonce="${nonce}">
-    window.baseUrl = "http://13.125.85.38:8080/api/v1";
-  </script>
 
   <!-- 스타일 로드 --> 
   <link href="${registerStyleUri}" rel="stylesheet" />
@@ -116,52 +175,22 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
   <link href="${chatIngStyleUri}" rel="stylesheet" />
 </head>
 <body>
-  <!-- Member controls -->
-  <div id="memberControls">
-    <button id="loginBtn">Login</button>
-    <button id="signupBtn">Sign Up</button>
+
+  <div id="app">
+    <div id="member-app"></div>
+    <div id="chat-start-app" style="display: none;"></div>
+    <div id="chat-ing-app" style="display: none;"></div>
   </div>
 
   <!-- Chat UI -->
   <div id="chatContainer"></div>
 
-  <script nonce="${nonce}">
-    const vscode = acquireVsCodeApi();
-    let baseUrl = '';
-
-    window.addEventListener('message', event => {
-      const msg = event.data;
-      if (msg.command === 'setBaseUrl') {
-        baseUrl = msg.baseUrl;
-      }
-      if (msg.type === 'loginResponse') {
-        console.log('Login successful:', msg.data);
-      }
-      if (msg.type === 'loginError') {
-        console.error('Login error:', msg.error);
-      }
-    });
-
-    document.getElementById('loginBtn').addEventListener('click', () => {
-      const userId = prompt('Enter User ID for login');
-      if (!userId) return;
-      vscode.postMessage({ type: 'login', body: { user_id: userId } });
-    });
-
-    document.getElementById('signupBtn').addEventListener('click', () => {
-      const username = prompt('Enter Username for sign-up');
-      const password = prompt('Enter Password for sign-up');
-      if (!username || !password) return;
-      vscode.postMessage({ type: 'signup', body: { username, password } });
-    });
-  </script>
-
-  <script nonce="${nonce}" src="${authScriptUri}"></script>
-  <script nonce="${nonce}" src="${loginScriptUri}"></script>
-  <script nonce="${nonce}" src="${registerScriptUri}"></script>
-  <script nonce="${nonce}" src="${chatLogicUri}"></script>
-  <script nonce="${nonce}" src="${chatStartUri}"></script>
-  <script nonce="${nonce}" src="${chatIngUri}"></script>
+  <script type="module" nonce="${nonce}" src="${authScriptUri}"></script>
+  <script type="module" nonce="${nonce}" src="${loginScriptUri}"></script>
+  <script type="module"  nonce="${nonce}" src="${registerScriptUri}"></script>
+  <script type="module"  nonce="${nonce}" src="${chatLogicUri}"></script>
+  <script type="module"  nonce="${nonce}" src="${chatStartUri}"></script>
+  <script type="module"  nonce="${nonce}" src="${chatIngUri}"></script>
 </body>
 </html>`;
   }
