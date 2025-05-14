@@ -45,9 +45,9 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
     // resource URIs
     const authScriptUri      = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'member', 'auth.js'));
     const loginScriptUri     = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'member', 'login.js'));
-    const loginStyleUri      = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'member', 'css', 'login.css'));
-    
     const registerScriptUri  = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'member', 'register.js'));
+    
+    const loginStyleUri      = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'member', 'css', 'login.css'));
     const registerStyleUri   = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'member', 'css', 'register.css'));
     
     const chatLogicUri       = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'chat', 'chat_logic.js'));
@@ -94,10 +94,10 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
 
   <script type="module" nonce="${nonce}" src="${authScriptUri}"></script>
   <script type="module" nonce="${nonce}" src="${loginScriptUri}"></script>
-  <script type="module"  nonce="${nonce}" src="${registerScriptUri}"></script>
-  <script type="module"  nonce="${nonce}" src="${chatLogicUri}"></script>
-  <script type="module"  nonce="${nonce}" src="${chatStartUri}"></script>
-  <script type="module"  nonce="${nonce}" src="${chatIngUri}"></script>
+  <script type="module" nonce="${nonce}" src="${registerScriptUri}"></script>
+  <script type="module" nonce="${nonce}" src="${chatLogicUri}"></script>
+  <script type="module" nonce="${nonce}" src="${chatStartUri}"></script>
+  <script type="module" nonce="${nonce}" src="${chatIngUri}"></script>
 </body>
 </html>`;
   }

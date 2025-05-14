@@ -13,3 +13,11 @@
 4. security refactoring
     - ~~code scrab → move to sidebar~~
     - vscode extension → LLM
+
+
+
+
+5.14
+promblem : register-btn을 눌렀을 때, toRegister로 postMessage가 송신되는데 변화가 일어나지 않음.
+
+- Login 기능은 되는데 register 창 전환은 안 되는 걸 보면 

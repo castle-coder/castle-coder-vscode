@@ -29,28 +29,34 @@ export class MessageHandler {
         break;
 
       default:
-        // Ignore messages that are handled by the webview's own message handler
-        if (message.type !== 'toRegister' && message.type !== 'toLogin') {
-          console.warn('알 수 없는 메시지 타입:', message.type);
-        }
         break;
     }
   }
 
   private async handleCheckEmail(email: string) {
     try {
-      const res = await axios.get<{ available: boolean }>(
+      const res = await axios.get(
         `${this.baseUrl}/member/check-email`,
         { params: { email } }
       );
       this.view.webview.postMessage({
         type: 'checkEmailResult',
         success: true,
-        available: res.data.available,
+        available: true,
       });
     } catch (err: unknown) {
       let errMsg = '이메일 중복 체크 중 알 수 없는 오류가 발생했습니다.';
       if (isAxiosError(err)) {
+        const errorCode = err.response?.data?.errorCode;
+        
+        if (err.response?.status === 404) {
+          this.view.webview.postMessage({
+            type: 'checkEmailResult',
+            success: true,
+            available: false,
+          });
+          return;
+        }
         errMsg = err.response?.data?.message ?? err.message;
       } else if (err instanceof Error) {
         errMsg = err.message;

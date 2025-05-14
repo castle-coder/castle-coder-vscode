@@ -1,6 +1,8 @@
 import { vscode } from '../api/vscodeApi.js';
+import { renderLoginView }    from './login.js';
 
 export function renderRegisterView() {
+  console.log('[Webview] renderRegisterView called');
   const memberApp = document.getElementById('member-app');
   memberApp.style.display = 'block';
   document.getElementById('chat-start-app').style.display = 'none';
@@ -90,6 +92,7 @@ export function renderRegisterView() {
   });
 
   document.getElementById('btn-back').addEventListener('click', () => {
-    vscode.postMessage({ type: 'toLogin' });
+    console.log('[Webview] Rendering login view');
+    renderLoginView();
   })
 }

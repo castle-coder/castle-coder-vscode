@@ -1,4 +1,5 @@
 import { vscode } from '../api/vscodeApi.js';
+import { renderRegisterView } from './register.js';
 
 export function renderLoginView() {
   const memberApp = document.getElementById('member-app');
@@ -44,6 +45,6 @@ export function renderLoginView() {
 
   document.getElementById('register-btn').addEventListener('click', () => {
     console.log('[Webview] Register button clicked');
-    vscode.postMessage({ type: 'toRegister' });
+    renderRegisterView();
   });
 }

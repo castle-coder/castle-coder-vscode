@@ -1,7 +1,4 @@
-// auth.js
-
 import { renderLoginView }    from './login.js';
-import { renderRegisterView } from './register.js';
 import { renderStartView }    from '../chat/chat_start.js';
 
 // 전역 인증 상태 및 사용자 정보
@@ -13,15 +10,6 @@ window.addEventListener('message', (e) => {
   console.log('[Webview] Received message:', msg);
   
   switch (msg.type) {
-    case 'toLogin':
-      console.log('[Webview] Rendering login view');
-      renderLoginView();
-      break;
-
-    case 'toRegister':
-      console.log('[Webview] Rendering register view');
-      renderRegisterView();
-      break;
 
     // 로그인 response
     case 'loginResponse':
@@ -65,10 +53,13 @@ window.addEventListener('message', (e) => {
       // { success: boolean, available?: boolean, error?: string }
       const fb = document.getElementById('reg-error')
       if (msg.success) {
-        fb.style.color = 'limegreen'
-        fb.textContent = msg.available
-          ? '사용 가능한 이메일입니다.'
-          : '이미 등록된 이메일입니다.'
+        if (msg.available) {
+          fb.style.color = 'limegreen'
+          fb.textContent = '사용 가능한 이메일입니다.'
+        } else {
+          fb.style.color = '#ff6b6b'
+          fb.textContent = '이미 등록된 이메일입니다.'
+        }
       } else {
         fb.style.color = '#ff6b6b'
         fb.textContent = msg.error
