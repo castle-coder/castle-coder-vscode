@@ -62,6 +62,3 @@ window.addEventListener('message', ev => {
     renderChatView(prompt);
   }
 });
-
-// ⚠️ 여기 있던 최초 렌더 호출은 완전히 제거했습니다.
-// renderStartView();
