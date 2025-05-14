@@ -1,9 +1,11 @@
+import { vscode } from '../api/vscodeApi.js';
+
 export function renderLoginView() {
   const memberApp = document.getElementById('member-app');
   memberApp.innerHTML = `
     <div class="form-container">
       <h2>Login</h2>
-      <div id="login-error" calass="error-message"></div>
+      <div id="login-error" class="error-message"></div>
       <input id="login-email" type="email" placeholder="Email" />
       <input id="login-password" type="password" placeholder="Password" />
       <div class="form-buttons">
@@ -14,13 +16,12 @@ export function renderLoginView() {
   `;
   memberApp.style.display = 'block';
 
+  const errorDiv = document.getElementById('login-error');
   
   document.getElementById('login-btn').addEventListener('click', () => {
     errorDiv.textContent = '';
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
-    const errorDiv = document.getElementById('login-error');
-    errorDiv.textContent = '';
 
     // 기본적인 유효성 검사
     if (!email || !password) {
@@ -34,13 +35,15 @@ export function renderLoginView() {
       errorDiv.textContent = '유효한 이메일 주소를 입력해주세요.';
       return;
     }
-    window.postMessage(
-      { type: 'login', body: { email, password } },
-      '*'
-    )
-  })
+
+    console.log('[Webview] Sending login request for:', email);
+    vscode.postMessage(
+      { type: 'login', body: { email, password } }
+    );
+  });
 
   document.getElementById('register-btn').addEventListener('click', () => {
-    window.postMessage({ type: 'toRegister' }, '*')
+    console.log('[Webview] Register button clicked');
+    vscode.postMessage({ type: 'toRegister' });
   });
 }

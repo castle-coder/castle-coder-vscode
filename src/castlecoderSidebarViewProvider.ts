@@ -1,11 +1,13 @@
 // castlecoderSidebarViewProvider.ts
 import * as vscode from 'vscode';
 import axios, { AxiosError, isAxiosError } from 'axios';
+import { MessageHandler } from './messageHandlers';
 
 export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'castleCoder.openview';
   private _view?: vscode.WebviewView;
   private baseUrl = 'http://13.125.85.38:8080/api/v1';
+  private _messageHandler?: MessageHandler;
 
   constructor(private readonly _extensionUri: vscode.Uri) {}
 
@@ -15,6 +17,7 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
     token: vscode.CancellationToken
   ) {
     this._view = webviewView;
+    this._messageHandler = new MessageHandler(webviewView);
 
     webviewView.webview.options = {
       enableScripts: true,
@@ -23,112 +26,16 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
 
     webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
 
-    
-
     webviewView.webview.onDidReceiveMessage(async (message: any) => {
-      switch (message.type) {
-
-        case 'checkEmail':
-          try {
-            const res = await axios.get<{ available: boolean }>(
-              `${this.baseUrl}/member/check-email`,
-              { params: { email: message.email } }
-            )
-            this._view?.webview.postMessage({
-              type: 'checkEmailResult',
-              success: true,
-              available: res.data.available,
-            })
-          } catch (err: unknown) {
-            let errMsg = '이메일 중복 체크 중 알 수 없는 오류가 발생했습니다.'
-            if (isAxiosError(err)) {
-              errMsg = err.response?.data?.message ?? err.message
-            } else if (err instanceof Error) {
-              errMsg = err.message
-            }
-            this._view?.webview.postMessage({
-              type: 'checkEmailResult',
-              success: false,
-              error: errMsg,
-            })
-          }
-          break
-
-        case 'login':
-          try {
-            const res = await axios.post<{ token: string }>(
-              `${this.baseUrl}/auth/login`,
-              message.body,
-              { withCredentials: true }
-            )
-            this._view?.webview.postMessage({
-              type: 'loginResponse',
-              success: true,
-              data: res.data,
-            })
-          } catch (err: unknown) {
-            let errMsg = '로그인 중 알 수 없는 오류가 발생했습니다.'
-            if (isAxiosError(err)) {
-              errMsg = err.response?.data?.message ?? err.message
-            } else if (err instanceof Error) {
-              errMsg = err.message
-            }
-            this._view?.webview.postMessage({
-              type: 'loginError',
-              success: false,
-              error: errMsg,
-            })
-          }
-          break
-
-        case 'signup':
-          try {
-            const res = await axios.post(
-              `${this.baseUrl}/member/sign-up`,
-              message.body
-            )
-            this._view?.webview.postMessage({
-              type: 'signupResponse',
-              success: true,
-              data: res.data,
-            })
-          } catch (err: unknown) {
-            let errMsg = '회원가입 중 알 수 없는 오류가 발생했습니다.'
-            if (isAxiosError(err)) {
-              errMsg = err.response?.data?.message ?? err.message
-            } else if (err instanceof Error) {
-              errMsg = err.message
-            }
-            this._view?.webview.postMessage({
-              type: 'signupError',
-              success: false,
-              error: errMsg,
-            })
-          }
-          break
-
-        case 'newChat':
-          this.sendNewChat()
-          break
-
-        case 'userPrompt':
-          this.sendUserPrompt(message.prompt)
-          break
-
-        default:
-          console.warn('알 수 없는 메시지 타입:', message.type)
-          break
-      }
-    })
+      await this._messageHandler?.handleMessage(message);
+    });
   }
 
   public sendNewChat() {
-    // existing functionality preserved
     this._view?.webview.postMessage({ type: 'newChat' });
   }
 
   public sendUserPrompt(prompt: string) {
-    // existing functionality preserved
     this._view?.webview.postMessage({ type: 'userPrompt', prompt });
   }
 

@@ -1,3 +1,5 @@
+import { vscode } from '../api/vscodeApi.js';
+
 export function renderRegisterView() {
   const memberApp = document.getElementById('member-app');
   memberApp.style.display = 'block';
@@ -43,7 +45,8 @@ export function renderRegisterView() {
       emailCheckBox.checked = false
       return
     }
-    window.postMessage({ type: 'checkEmail', email }, '*')
+    console.log('[Webview] Sending checkEmail for', email);
+    vscode.postMessage({ type: 'checkEmail', email })
   }) 
 
   // 회원가입 필드
@@ -81,13 +84,12 @@ export function renderRegisterView() {
     }
 
     errorDiv.textContent = '';
-    window.postMessage(
-      { type: 'signup', body: { email, firstName, lastName, password, phone } },
-      '*'
+    vscode.postMessage(
+      { type: 'signup', body: { email, firstName, lastName, password, phone } }
     )
   });
 
   document.getElementById('btn-back').addEventListener('click', () => {
-    window.postMessage({ type: 'toLogin' }, '*');
+    vscode.postMessage({ type: 'toLogin' });
   })
 }

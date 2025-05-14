@@ -10,15 +10,18 @@ window.__castleCoder_auth = { isAuthenticated: false, user: null };
 // 메시지 리스너
 window.addEventListener('message', (e) => {
   const msg = e.data;
+  console.log('[Webview] Received message:', msg);
   
   switch (msg.type) {
     case 'toLogin':
-      renderLoginView()
-      break
+      console.log('[Webview] Rendering login view');
+      renderLoginView();
+      break;
 
     case 'toRegister':
-      renderRegisterView()
-      break
+      console.log('[Webview] Rendering register view');
+      renderRegisterView();
+      break;
 
     // 로그인 response
     case 'loginResponse':
