@@ -1,5 +1,6 @@
 import { handleStartChat } from './chat_logic.js';
 import { renderChatView } from './chat_ing.js';
+import { logout } from '../member/auth.js';
 
 // textarea 자동 높이 조절
 function autoResize(textarea) {
@@ -23,6 +24,7 @@ export function renderStartView() {
       <div class="start-header">
         <h1>Ask Castle Coder</h1>
         <p>Castle Coder is your security assistant. Ask anything about code, exploits, or defense.</p>
+        <a href="#" id="logout-link" class="text-link">Logout</a>
       </div>
       <div class="chat-input-area">
         <textarea id="first-question" rows="2" placeholder="Ask Castle Coder"></textarea>
@@ -30,6 +32,12 @@ export function renderStartView() {
       </div>
     </div>
   `;
+
+  // 로그아웃 링크 이벤트 리스너 추가
+  document.getElementById('logout-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    logout();
+  });
 
   const ta  = document.getElementById('first-question');
   const btn = document.getElementById('start-btn');

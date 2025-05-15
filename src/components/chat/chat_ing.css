@@ -104,3 +104,20 @@ html, body, #app, #chat-ing-app {
   color: #ccc;
   font-size: 12px;
 }
+
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.text-link {
+  color: #666;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.text-link:hover {
+  text-decoration: underline;
+}

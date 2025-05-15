@@ -1,6 +1,7 @@
 // src/components/chat/chat_ing.js
 
 import { renderStartView } from './chat_start.js';
+import { logout } from '../member/auth.js';
 
 // textarea 자동 높이 조절
 function autoResize(textarea) {
@@ -21,15 +22,23 @@ export function renderChatView(initialMessage) {
 
   chatApp.innerHTML = `
     <div class="chat-container">
-      <h2>Castle Coder</h2>
+      <div class="chat-header">
+        <h2>Castle Coder</h2>
+        <a href="#" id="logout-link" class="text-link">Logout</a>
+      </div>
       <div class="chatbox" id="chatbox"></div>
       <div class="chat-input-area">
         <textarea id="ask-input" rows="1" placeholder="Ask more..."></textarea>
         <button id="send-btn">Send</button>
       </div>
-      <p class="text">Be careful with security.</p>
     </div>
   `;
+
+  // 로그아웃 링크 이벤트 리스너 추가
+  document.getElementById('logout-link').addEventListener('click', (e) => {
+    e.preventDefault();
+    logout();
+  });
 
   const chatbox = document.getElementById('chatbox');
   const ta      = document.getElementById('ask-input');
@@ -78,7 +87,7 @@ export function renderChatView(initialMessage) {
     });
   }
 
-  // 사이드바 상단 + 버튼 눌러 “newChat” 들어오면 시작 화면 복귀
+  // 사이드바 상단 + 버튼 눌러 "newChat" 들어오면 시작 화면 복귀
   window.addEventListener('message', ev => {
     if (ev.data.type === 'newChat') {
       renderStartView();
