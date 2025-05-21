@@ -1,6 +1,7 @@
 // src/components/chat/chat_ing.js
 
 import { renderStartView } from './chat_start.js';
+import { logout } from '../member/auth.js';
 
 // textarea 자동 높이 조절
 function autoResize(textarea) {
@@ -19,17 +20,36 @@ export function renderChatView(initialMessage) {
   startApp.style.display  = 'none';
   chatApp.style.display   = 'flex';
 
-  chatApp.innerHTML = `
-    <div class="chat-container">
-      <h2>Castle Coder</h2>
-      <div class="chatbox" id="chatbox"></div>
-      <div class="chat-input-area">
-        <textarea id="ask-input" rows="1" placeholder="Ask more..."></textarea>
-        <button id="send-btn">Send</button>
+  // 채팅 컨테이너가 없을 때만 생성
+  if (!document.querySelector('.chat-container')) {
+    chatApp.innerHTML = `
+      <div class="chat-container">
+        <div class="chat-header">
+          <h2>Castle Coder</h2>
+          <a href="#" id="chat-ing-logout" class="text-link">Logout</a>
+        </div>
+        <div class="chatbox" id="chatbox"></div>
+        <div class="chat-input-area">
+          <textarea id="ask-input" rows="1" placeholder="Ask more..."></textarea>
+          <button id="send-btn">Send</button>
+        </div>
       </div>
-      <p class="text">Be careful with security.</p>
-    </div>
-  `;
+    `;
+
+    // 로그아웃 링크 이벤트 리스너 추가
+    document.getElementById('chat-ing-logout').addEventListener('click', (e) => {
+      e.preventDefault();
+      console.log('Logout clicked in chat_ing.js');
+      
+      // 로그아웃 처리 먼저 실행
+      logout();
+      
+      // 화면 전환
+      chatApp.style.display = 'none';
+      startApp.style.display = 'none';
+      memberApp.style.display = 'block';
+    });
+  }
 
   const chatbox = document.getElementById('chatbox');
   const ta      = document.getElementById('ask-input');
@@ -77,11 +97,11 @@ export function renderChatView(initialMessage) {
       autoResize(ta);
     });
   }
-
-  // 사이드바 상단 + 버튼 눌러 “newChat” 들어오면 시작 화면 복귀
-  window.addEventListener('message', ev => {
-    if (ev.data.type === 'newChat') {
-      renderStartView();
-    }
-  });
 }
+
+// 웹뷰 메시지 리스너: newChat 처리
+window.addEventListener('message', ev => {
+  if (ev.data.type === 'newChat') {
+    renderStartView();
+  }
+});
