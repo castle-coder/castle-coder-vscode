@@ -4,6 +4,29 @@ import { renderStartView }    from '../chat/chat_start.js';
 // 전역 인증 상태 및 사용자 정보
 window.__castleCoder_auth = { isAuthenticated: false, user: null };
 
+// 로컬 스토리지에서 인증 정보 복원
+function restoreAuthState() {
+  const savedAuth = localStorage.getItem('castleCoder_auth');
+  if (savedAuth) {
+    try {
+      const { user, accessToken, refreshToken } = JSON.parse(savedAuth);
+      if (accessToken && refreshToken && user) {
+        window.__castleCoder_auth = {
+          isAuthenticated: true,
+          user: user,
+          accessToken: accessToken,
+          refreshToken: refreshToken
+        };
+        renderStartView();
+        return;
+      }
+    } catch (e) {
+      console.error('Failed to restore auth state:', e);
+      localStorage.removeItem('castleCoder_auth');
+    }
+  }
+}
+
 // 메시지 리스너
 window.addEventListener('message', (e) => {
   const msg = e.data;
@@ -15,13 +38,22 @@ window.addEventListener('message', (e) => {
     case 'loginResponse':
       // { success: true, data: { token, ... } }
       if (msg.success) {
+        const { accessToken, refreshToken, ...user } = msg.data;
         window.__castleCoder_auth = {
           isAuthenticated: true,
-          user: msg.data
-        }
-        renderStartView()
+          user: user,
+          accessToken: accessToken,
+          refreshToken: refreshToken
+        };
+        // 로컬 스토리지에 인증 정보 저장
+        localStorage.setItem('castleCoder_auth', JSON.stringify({
+          user: user,
+          accessToken: accessToken,
+          refreshToken: refreshToken
+        }));
+        renderStartView();
       } else {
-        document.getElementById('login-error').textContent = msg.error
+        document.getElementById('login-error').textContent = msg.error;
       }
       break
 
@@ -83,13 +115,18 @@ window.addEventListener('message', (e) => {
   // }
 })
 
-// ▶️ **웹뷰 로드 직후** 로그인 화면부터 띄우기
-renderLoginView();
+// ▶️ **웹뷰 로드 직후** 저장된 인증 상태 확인 후 적절한 화면 표시
+restoreAuthState();
+if (!window.__castleCoder_auth.isAuthenticated) {
+  renderLoginView();
+}
 
 // 로그아웃 함수
 export function logout() {
+  console.log('Logout function called'); // 디버깅용 로그 추가
   window.__castleCoder_auth.isAuthenticated = false;
   window.__castleCoder_auth.user = null;
+  localStorage.removeItem('castleCoder_auth');
   renderLoginView();
 }
 

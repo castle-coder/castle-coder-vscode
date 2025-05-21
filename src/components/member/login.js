@@ -2,6 +2,7 @@ import { vscode } from '../api/vscodeApi.js';
 import { renderRegisterView } from './register.js';
 
 export function renderLoginView() {
+  console.log('renderLoginView called');
   const memberApp = document.getElementById('member-app');
   memberApp.innerHTML = `
     <div class="form-container">

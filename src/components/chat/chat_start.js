@@ -24,7 +24,7 @@ export function renderStartView() {
       <div class="start-header">
         <h1>Ask Castle Coder</h1>
         <p>Castle Coder is your security assistant. Ask anything about code, exploits, or defense.</p>
-        <a href="#" id="logout-link" class="text-link">Logout</a>
+        <a href="#" id="chat-start-logout" class="text-link">Logout</a>
       </div>
       <div class="chat-input-area">
         <textarea id="first-question" rows="2" placeholder="Ask Castle Coder"></textarea>
@@ -34,7 +34,7 @@ export function renderStartView() {
   `;
 
   // 로그아웃 링크 이벤트 리스너 추가
-  document.getElementById('logout-link').addEventListener('click', (e) => {
+  document.getElementById('chat-start-logout').addEventListener('click', (e) => {
     e.preventDefault();
     logout();
   });
