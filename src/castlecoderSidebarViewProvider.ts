@@ -1,13 +1,15 @@
 // castlecoderSidebarViewProvider.ts
 import * as vscode from 'vscode';
 import axios, { AxiosError, isAxiosError } from 'axios';
-import { MessageHandler } from './messageHandlers';
+import { MessageHandler } from './messageHandler/login_register';
+import { ChatMessageHandler } from './messageHandler/chat';
 
 export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'castleCoder.openview';
   private _view?: vscode.WebviewView;
   private baseUrl = 'http://13.125.85.38:8080/api/v1';
   private _messageHandler?: MessageHandler;
+  private _chatMessageHandler?: ChatMessageHandler;
 
   constructor(private readonly _extensionUri: vscode.Uri) {}
 
@@ -18,6 +20,7 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
   ) {
     this._view = webviewView;
     this._messageHandler = new MessageHandler(webviewView);
+    this._chatMessageHandler = new ChatMessageHandler(webviewView);
 
     webviewView.webview.options = {
       enableScripts: true,
@@ -27,7 +30,11 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
     webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
 
     webviewView.webview.onDidReceiveMessage(async (message: any) => {
-      await this._messageHandler?.handleMessage(message);
+      if (message.type === 'createChatSession' || message.type === 'updateChatSessionTitle') {
+        await this._chatMessageHandler?.handleMessage(message);
+      } else {
+        await this._messageHandler?.handleMessage(message);
+      }
     });
   }
 
