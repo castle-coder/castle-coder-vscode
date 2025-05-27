@@ -30,6 +30,10 @@ export class MessageHandler {
         this.view.webview.postMessage({ type: 'userPrompt', prompt: message.prompt });
         break;
 
+      case 'logout':
+        await vscode.commands.executeCommand('setContext', 'castleCoder:isLoggedIn', false);
+        break;
+
       default:
         break;
     }
@@ -87,6 +91,7 @@ export class MessageHandler {
       console.log('[Extension] Login response:', res.data);
       this.accessToken = res.data.data.accessToken;
       setAccessToken(this.accessToken);
+      await vscode.commands.executeCommand('setContext', 'castleCoder:isLoggedIn', true);
       this.view.webview.postMessage({
         type: 'loginResponse',
         success: true,

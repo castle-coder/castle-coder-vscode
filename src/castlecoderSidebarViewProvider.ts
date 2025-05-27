@@ -30,7 +30,11 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
     webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
 
     webviewView.webview.onDidReceiveMessage(async (message: any) => {
-      if (message.type === 'createChatSession' || message.type === 'updateChatSessionTitle') {
+      if (
+        message.type === 'createChatSession' ||
+        message.type === 'updateChatSessionTitle' ||
+        message.type === 'getChatSessionList'
+      ) {
         await this._chatMessageHandler?.handleMessage(message);
       } else {
         await this._messageHandler?.handleMessage(message);
@@ -44,6 +48,10 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
 
   public sendUserPrompt(prompt: string) {
     this._view?.webview.postMessage({ type: 'userPrompt', prompt });
+  }
+
+  public showSessionList() {
+    this._view?.webview.postMessage({ type: 'showSessionList' });
   }
 
   private getHtmlForWebview(webview: vscode.Webview): string {

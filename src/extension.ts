@@ -64,6 +64,13 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
   context.subscriptions.push(openChatView);
+
+  // 6) 명령어: 세션 목록 보기
+  context.subscriptions.push(
+    vscode.commands.registerCommand('castleCoderSidebar.menu.view', () => {
+      provider.showSessionList();
+    })
+  );
 }
 
 export function deactivate() {

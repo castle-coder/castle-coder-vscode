@@ -16,6 +16,10 @@ export class ChatMessageHandler {
         await this.handleUpdateChatSessionTitle(message.chatSessionId, message.title);
         break;
 
+      case 'getChatSessionList':
+        await this.handleGetChatSessionList();
+        break;
+
       default:
         break;
     }
@@ -54,6 +58,7 @@ export class ChatMessageHandler {
   private async handleUpdateChatSessionTitle(chatSessionId: number, title: string) {
     try {
       console.log('[chat.ts] Updating chat session title:', { chatSessionId, title });
+      console.log('PATCH body:', { chatSessionId, title });
       await axios.patch(`${this.baseUrl}/chat/session`, { chatSessionId, title });
       this.view.webview.postMessage({
         type: 'updateChatSessionTitleResponse',
@@ -69,6 +74,29 @@ export class ChatMessageHandler {
       }
       this.view.webview.postMessage({
         type: 'updateChatSessionTitleResponse',
+        success: false,
+        error: errMsg
+      });
+    }
+  }
+
+  private async handleGetChatSessionList() {
+    try {
+      const res = await axios.get(`${this.baseUrl}/chat/session`);
+      this.view.webview.postMessage({
+        type: 'getChatSessionListResponse',
+        success: true,
+        data: res.data.data
+      });
+    } catch (err: unknown) {
+      let errMsg = '채팅 세션 목록 불러오기 중 오류가 발생했습니다.';
+      if (isAxiosError(err)) {
+        errMsg = err.response?.data?.message ?? err.message;
+      } else if (err instanceof Error) {
+        errMsg = err.message;
+      }
+      this.view.webview.postMessage({
+        type: 'getChatSessionListResponse',
         success: false,
         error: errMsg
       });

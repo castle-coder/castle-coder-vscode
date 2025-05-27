@@ -2,6 +2,7 @@
 
 import { renderStartView } from './chat_start.js';
 import { logout } from '../member/auth.js';
+import { renderSessionList } from '../chat/session/chat_session.js';
 
 // textarea 자동 높이 조절
 function autoResize(textarea) {
@@ -24,6 +25,7 @@ export function renderChatView(initialMessage) {
   if (!document.querySelector('.chat-container')) {
     chatApp.innerHTML = `
       <div class="chat-container">
+        <div id="session-list" style="margin-bottom: 16px;"></div>
         <div class="chat-header">
           <h2>Castle Coder</h2>
           <a href="#" id="chat-ing-logout" class="text-link">Logout</a>
@@ -40,16 +42,14 @@ export function renderChatView(initialMessage) {
     document.getElementById('chat-ing-logout').addEventListener('click', (e) => {
       e.preventDefault();
       console.log('Logout clicked in chat_ing.js');
-      
-      // 로그아웃 처리 먼저 실행
       logout();
-      
-      // 화면 전환
       chatApp.style.display = 'none';
       startApp.style.display = 'none';
       memberApp.style.display = 'block';
     });
   }
+
+  renderSessionList();
 
   const chatbox = document.getElementById('chatbox');
   const ta      = document.getElementById('ask-input');
@@ -103,5 +103,8 @@ export function renderChatView(initialMessage) {
 window.addEventListener('message', ev => {
   if (ev.data.type === 'newChat') {
     renderStartView();
+  }
+  if (ev.data.type === 'showSessionList') {
+    renderSessionList();
   }
 });

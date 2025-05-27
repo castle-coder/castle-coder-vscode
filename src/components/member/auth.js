@@ -30,7 +30,7 @@ function restoreAuthState() {
 // 메시지 리스너
 window.addEventListener('message', (e) => {
   const msg = e.data;
-  console.log('[Webview] Received message:', msg);
+  // console.log('[Webview] Received message:', msg);
   
   switch (msg.type) {
 
@@ -128,6 +128,7 @@ export function logout() {
   window.__castleCoder_auth.user = null;
   localStorage.removeItem('castleCoder_auth');
   renderLoginView();
+  vscode.postMessage({ type: 'logout' });
 }
 
 // 현재 인증 상태 확인

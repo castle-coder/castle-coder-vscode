@@ -43,7 +43,7 @@
         "command": "castleCoderSidebar.menu.view",
         "category": "castle-coder-sidebar-html",
         "title": "Castle Coder Sidebar HTML",
-        "icon": "$(clear-all)"
+        "icon": "$(clock)"
       },
       {
         "command": "castleCoder.newChat",
@@ -60,7 +60,7 @@
         {
           "command": "castleCoderSidebar.menu.view",
           "group": "navigation",
-          "when": "view == castleCoder.openview"
+          "when": "view == castleCoder.openview && castleCoder:isLoggedIn"
         },
         {
           "command": "castleCoder.newChat",
