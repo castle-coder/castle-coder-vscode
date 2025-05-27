@@ -2,7 +2,6 @@ import { vscode } from '../api/vscodeApi.js';
 import { renderRegisterView } from './register.js';
 
 export function renderLoginView() {
-  console.log('renderLoginView called');
   const memberApp = document.getElementById('member-app');
   memberApp.innerHTML = `
     <div class="form-container">
@@ -38,7 +37,6 @@ export function renderLoginView() {
       return;
     }
 
-    console.log('[Webview] Sending login request for:', email);
     vscode.postMessage(
       { type: 'login', body: { email, password } }
     );

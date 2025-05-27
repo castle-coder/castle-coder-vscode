@@ -15,9 +15,9 @@
     - vscode extension → LLM
 
 
+5.27
+채팅 세션 생성 - 제목 붙일 때 post 요청 보내는 걸로 설정했는데
+문제가 patch가 따로 존재해서 제목을 생성해도 제목이 같이 전송되지 않고 생성 요청만 전송됨.
+PATCH로 제목 설정을 하기 위해서는 enter를 한 번 더 눌러야 됨.
 
-
-5.14
-promblem : register-btn을 눌렀을 때, toRegister로 postMessage가 송신되는데 변화가 일어나지 않음.
-
-- Login 기능은 되는데 register 창 전환은 안 되는 걸 보면 
+PATCH 에러 해결 필요.

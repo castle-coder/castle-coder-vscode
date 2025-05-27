@@ -3,6 +3,7 @@ import { renderChatView } from './chat_ing.js';
 import { logout } from '../member/auth.js';
 import { requestCreateSession as createSession, requestUpdateSessionTitle as updateSessionTitle } from '../chat/session/sessionApi.js';
 import { setSession, getSession } from '../chat/session/sessionState.js';
+import { renderSessionList, renderSessionListOverlay } from '../chat/session/chat_session.js';
 
 // textarea 자동 높이 조절
 function autoResize(textarea) {
@@ -23,6 +24,7 @@ export function renderStartView() {
 
   startApp.innerHTML = `
     <div class="start-container" style="width: 100%; box-sizing: border-box;">
+      <!-- <div id="session-list" style="margin-bottom: 16px;"></div> -->
       <div class="title-row" style="display: flex; justify-content: flex-start; align-items: center; margin-bottom: 24px; width: 100%;">
         <input type="text" id="chat-title" placeholder="제목 입력" 
           style="height: 32px; font-size: 18px; padding: 4px 12px; flex: 1 1 0; min-width: 0; width: 100%; box-sizing: border-box; background: #232323; color: #fff; border: none; border-radius: 6px; outline: none; transition: background 0.2s; ::placeholder{color:#aaa;}"/>
@@ -122,9 +124,11 @@ export function renderStartView() {
     titleInput.addEventListener('change', updateInputWidth);
     titleInput.addEventListener('blur', updateInputWidth);
   }
+
+  renderSessionList();
 }
 
-// 웹뷰 메시지 리스너: newChat, userPrompt 처리
+// 웹뷰 메시지 리스너: newChat, userPrompt, showSessionList 처리
 window.addEventListener('message', ev => {
   const { type, prompt } = ev.data;
   if (type === 'newChat') {
@@ -132,5 +136,8 @@ window.addEventListener('message', ev => {
   }
   if (type === 'userPrompt') {
     renderChatView(prompt);
+  }
+  if (type === 'showSessionList') {
+    renderSessionListOverlay();
   }
 });

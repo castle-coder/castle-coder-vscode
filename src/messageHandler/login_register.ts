@@ -30,6 +30,10 @@ export class MessageHandler {
         this.view.webview.postMessage({ type: 'userPrompt', prompt: message.prompt });
         break;
 
+      case 'logout':
+        await vscode.commands.executeCommand('setContext', 'castleCoder:isLoggedIn', false);
+        break;
+
       default:
         break;
     }
@@ -73,7 +77,6 @@ export class MessageHandler {
 
   private async handleLogin(body: { email: string; password: string }) {
     try {
-      console.log('[Extension] Attempting login with:', { email: body.email });
       const res = await axios.post<{ data: { accessToken: string } }>(
         `${this.baseUrl}/auth/login`,
         body,
@@ -84,19 +87,17 @@ export class MessageHandler {
           }
         }
       );
-      console.log('[Extension] Login response:', res.data);
       this.accessToken = res.data.data.accessToken;
       setAccessToken(this.accessToken);
+      await vscode.commands.executeCommand('setContext', 'castleCoder:isLoggedIn', true);
       this.view.webview.postMessage({
         type: 'loginResponse',
         success: true,
         data: res.data,
       });
     } catch (err: unknown) {
-      console.error('[Extension] Login error details:', err);
       let errMsg = '로그인 중 알 수 없는 오류가 발생했습니다.';
       if (isAxiosError(err)) {
-        console.error('[Extension] Axios error response:', err.response?.data);
         errMsg = err.response?.data?.message ?? err.message;
       } else if (err instanceof Error) {
         errMsg = err.message;
