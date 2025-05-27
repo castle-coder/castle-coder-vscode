@@ -1,5 +1,7 @@
 import { attachDeleteHandlers } from './sessionDelete.js';
 import { requestChatSessionList } from './sessionApi.js';
+import { loadChatSession } from './sessionLoad.js';
+import { renderChatView } from '../chat_ing.js';
 
 export async function renderSessionList() {
   const listDiv = document.getElementById('session-list');
@@ -40,10 +42,15 @@ export async function renderSessionList() {
 
     // 세션 클릭 이벤트
     listDiv.querySelectorAll('.session-item').forEach(btn => {
-      btn.addEventListener('click', e => {
+      btn.addEventListener('click', async e => {
         const id = btn.getAttribute('data-id');
-        // TODO: 세션 불러오기 로직 연결
-        alert('세션 선택: ' + id);
+        try {
+          const chatData = await loadChatSession(Number(id));
+          console.log('Loaded chatData:', chatData);
+          renderChatView(chatData);
+        } catch (error) {
+          console.error('Error loading chat session:', error);
+        }
       });
     });
 

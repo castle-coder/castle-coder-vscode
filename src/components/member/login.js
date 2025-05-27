@@ -43,7 +43,6 @@ export function renderLoginView() {
   });
 
   document.getElementById('register-btn').addEventListener('click', () => {
-    console.log('[Webview] Register button clicked');
     renderRegisterView();
   });
 }

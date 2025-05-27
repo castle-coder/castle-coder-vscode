@@ -101,7 +101,6 @@ window.addEventListener('message', (e) => {
 
     case 'newChat':
       if (window.__castleCoder_auth.isAuthenticated) {
-        console.log('Rendering start view...');
         renderStartView();
       }
       break
@@ -124,7 +123,6 @@ if (!window.__castleCoder_auth.isAuthenticated) {
 
 // 로그아웃 함수
 export function logout() {
-  console.log('Logout function called'); // 디버깅용 로그 추가
   window.__castleCoder_auth.isAuthenticated = false;
   window.__castleCoder_auth.user = null;
   localStorage.removeItem('castleCoder_auth');
