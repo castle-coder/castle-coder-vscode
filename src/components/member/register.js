@@ -2,7 +2,7 @@ import { vscode } from '../api/vscodeApi.js';
 import { renderLoginView }    from './login.js';
 
 export function renderRegisterView() {
-  console.log('[Webview] renderRegisterView called');
+  // console.log('[Webview] renderRegisterView called');
   const memberApp = document.getElementById('member-app');
   memberApp.style.display = 'block';
   document.getElementById('chat-start-app').style.display = 'none';
@@ -47,7 +47,7 @@ export function renderRegisterView() {
       emailCheckBox.checked = false
       return
     }
-    console.log('[Webview] Sending checkEmail for', email);
+    // console.log('[Webview] Sending checkEmail for', email);
     vscode.postMessage({ type: 'checkEmail', email })
   }) 
 

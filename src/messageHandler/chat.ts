@@ -25,6 +25,10 @@ export class ChatMessageHandler {
         await this.handleDeleteChatSession(message.chatSessionId);
         break;
 
+      case 'loadChatSession':
+        await this.handleLoadChatSession(message.chatSessionId);
+        break;
+
       default:
         break;
     }
@@ -63,7 +67,6 @@ export class ChatMessageHandler {
   private async handleUpdateChatSessionTitle(chatSessionId: number, title: string) {
     try {
       console.log('[chat.ts] Updating chat session title:', { chatSessionId, title });
-      console.log('PATCH body:', { chatSessionId, title });
       // 디버깅: Authorization 헤더 확인
       const testConfig = await axios.getUri({
         url: `${this.baseUrl}/chat/session`,
@@ -160,6 +163,39 @@ export class ChatMessageHandler {
         success: false,
         error: errMsg,
         chatSessionId
+      });
+    }
+  }
+
+  private async handleLoadChatSession(chatSessionId: number) {
+    try {
+      console.log('[chat.ts] Loading chat session:', chatSessionId);
+      const res = await axios.get(`${this.baseUrl}/chat/logs`, {
+        params: { chatSessionId },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getAccessToken()}`,
+          'Accept': 'application/json'
+        }
+      });
+      
+      this.view.webview.postMessage({
+        type: 'loadChatSessionResponse',
+        success: true,
+        data: { messages: res.data.data }
+      });
+    } catch (err: unknown) {
+      console.error('[chat.ts] Error loading chat session:', err);
+      let errMsg = '채팅 세션 로드 중 오류가 발생했습니다.';
+      if (isAxiosError(err)) {
+        errMsg = err.response?.data?.message ?? err.message;
+      } else if (err instanceof Error) {
+        errMsg = err.message;
+      }
+      this.view.webview.postMessage({
+        type: 'loadChatSessionResponse',
+        success: false,
+        error: errMsg
       });
     }
   }

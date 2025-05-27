@@ -2,7 +2,6 @@ import { vscode } from '../../api/vscodeApi.js';
 
 // 채팅 세션 생성 요청 (프론트 → 익스텐션)
 export function requestCreateSession(title) {
-  console.log('[sessionApi] requestCreateSession called', title);
   return new Promise((resolve, reject) => {
     vscode.postMessage({
       type: 'createChatSession',
@@ -26,7 +25,6 @@ export function requestCreateSession(title) {
 
 // 채팅 세션 제목 수정 요청 (프론트 → 익스텐션)
 export function requestUpdateSessionTitle(chatSessionId, title) {
-  console.log('[sessionApi] requestUpdateSessionTitle called', {chatSessionId, title});
   return new Promise((resolve, reject) => {
     vscode.postMessage({
       type: 'updateChatSessionTitle',
