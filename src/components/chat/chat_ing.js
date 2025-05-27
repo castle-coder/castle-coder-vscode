@@ -2,7 +2,7 @@
 
 import { renderStartView } from './chat_start.js';
 import { logout } from '../member/auth.js';
-import { renderSessionList } from '../chat/session/chat_session.js';
+import { renderSessionList, renderSessionListOverlay } from '../chat/session/chat_session.js';
 
 // textarea 자동 높이 조절
 function autoResize(textarea) {
@@ -25,7 +25,6 @@ export function renderChatView(initialMessage) {
   if (!document.querySelector('.chat-container')) {
     chatApp.innerHTML = `
       <div class="chat-container">
-        <div id="session-list" style="margin-bottom: 16px;"></div>
         <div class="chat-header">
           <h2>Castle Coder</h2>
           <a href="#" id="chat-ing-logout" class="text-link">Logout</a>
@@ -48,8 +47,6 @@ export function renderChatView(initialMessage) {
       memberApp.style.display = 'block';
     });
   }
-
-  renderSessionList();
 
   const chatbox = document.getElementById('chatbox');
   const ta      = document.getElementById('ask-input');
@@ -99,12 +96,12 @@ export function renderChatView(initialMessage) {
   }
 }
 
-// 웹뷰 메시지 리스너: newChat 처리
+// 웹뷰 메시지 리스너: newChat, showSessionList 처리
 window.addEventListener('message', ev => {
   if (ev.data.type === 'newChat') {
     renderStartView();
   }
   if (ev.data.type === 'showSessionList') {
-    renderSessionList();
+    renderSessionListOverlay();
   }
 });

@@ -1,3 +1,4 @@
+import { attachDeleteHandlers } from './sessionDelete.js';
 import { requestChatSessionList } from './sessionApi.js';
 
 export async function renderSessionList() {
@@ -6,7 +7,6 @@ export async function renderSessionList() {
   listDiv.innerHTML = '<div>Loading...</div>';
   try {
     const sessions = await requestChatSessionList();
-    console.log('[chat_session.js] Fetched sessions:', sessions);
     if (!sessions.length) {
       listDiv.innerHTML = '<div style="color:#888;">No previous chats.</div>';
       return;
@@ -23,28 +23,34 @@ export async function renderSessionList() {
       `;
       document.head.appendChild(style);
     }
+    // 세션 리스트 렌더링 (DEL 버튼 포함)
     listDiv.innerHTML = sessions.map(
-      s => `<button class="session-item" data-id="${s.id}" style="
-        display: flex; align-items: center; width: 100%; text-align: left;
-        margin-bottom: 4px; background: #23272e; color: #fff;
-        border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer;
-        font-size: 1rem; transition: background 0.2s;">
-        <span style="display:inline-block;width:20px;height:20px;margin-right:12px;">
-          <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
-            <path d="M4 20V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7l-3 3z"
-              stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </span>
-        <span>${s.title || '(No Title)'}</span>
-      </button>`
+      s => `<div style="display:flex;align-items:center;margin-bottom:4px;">
+        <button class="session-item" data-id="${s.id}" style="flex:1; display: flex; align-items: center; width: 100%; text-align: left; background: #23272e; color: #fff; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; font-size: 1rem; transition: background 0.2s;">
+          <span style="display:inline-block;width:20px;height:20px;margin-right:12px;">
+            <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
+              <path d="M4 20V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7l-3 3z" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span>${s.title || '(No Title)'}</span>
+        </button>
+        <button class="del-session-btn" data-id="${s.id}">DEL</button>
+      </div>`
     ).join('');
-    // 클릭 이벤트
+
+    // 세션 클릭 이벤트
     listDiv.querySelectorAll('.session-item').forEach(btn => {
       btn.addEventListener('click', e => {
         const id = btn.getAttribute('data-id');
         // TODO: 세션 불러오기 로직 연결
         alert('세션 선택: ' + id);
       });
+    });
+
+    // DEL 버튼에만 삭제 기능 부여 (UI에서만 삭제)
+    attachDeleteHandlers(listDiv, (id) => {
+      const div = listDiv.querySelector(`.del-session-btn[data-id="${id}"]`).parentElement;
+      if (div) div.remove();
     });
   } catch (e) {
     console.error('[chat_session.js] Error fetching session list:', e);

@@ -33,7 +33,8 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
       if (
         message.type === 'createChatSession' ||
         message.type === 'updateChatSessionTitle' ||
-        message.type === 'getChatSessionList'
+        message.type === 'getChatSessionList' ||
+        message.type === 'deleteChatSession'
       ) {
         await this._chatMessageHandler?.handleMessage(message);
       } else {
