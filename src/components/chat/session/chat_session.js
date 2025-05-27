@@ -7,7 +7,6 @@ export async function renderSessionList() {
   listDiv.innerHTML = '<div>Loading...</div>';
   try {
     const sessions = await requestChatSessionList();
-    console.log('[chat_session.js] Fetched sessions:', sessions);
     if (!sessions.length) {
       listDiv.innerHTML = '<div style="color:#888;">No previous chats.</div>';
       return;

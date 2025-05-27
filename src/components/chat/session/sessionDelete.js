@@ -1,4 +1,5 @@
 import { vscode } from '../../api/vscodeApi.js';
+import { renderSessionList } from './chat_session.js';
 /**
  * 세션 리스트 내 DEL 버튼에 삭제 기능을 부여합니다.
  * @param {HTMLElement} listDiv - 세션 리스트가 렌더링된 DOM 요소
@@ -40,6 +41,7 @@ export function attachDeleteHandlers(listDiv, onDelete) {
   // 삭제 결과 메시지 수신
   window.addEventListener('message', function handleDeleteMsg(event) {
     const message = event.data;
+    console.log('[sessionDelete] window message:', message);
     if (message.type === 'deleteChatSessionResponse') {
       console.log('[sessionDelete] deleteChatSessionResponse 수신:', message);
       if (message.success) {
@@ -47,6 +49,8 @@ export function attachDeleteHandlers(listDiv, onDelete) {
           console.log('[sessionDelete] onDelete 콜백 호출:', message.chatSessionId);
           onDelete(message.chatSessionId);
         }
+        // 삭제 성공 시 세션 목록 새로고침
+        renderSessionList();
       } else {
         alert('삭제 실패: ' + message.error);
       }
