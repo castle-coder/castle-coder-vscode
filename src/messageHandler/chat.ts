@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import axios, { AxiosError, isAxiosError } from 'axios';
+import { getAccessToken } from '../auth';
 
 export class ChatMessageHandler {
   private baseUrl = 'http://13.125.85.38:8080/api/v1';
@@ -59,7 +60,26 @@ export class ChatMessageHandler {
     try {
       console.log('[chat.ts] Updating chat session title:', { chatSessionId, title });
       console.log('PATCH body:', { chatSessionId, title });
-      await axios.patch(`${this.baseUrl}/chat/session`, { chatSessionId, title });
+      // 디버깅: Authorization 헤더 확인
+      const testConfig = await axios.getUri({
+        url: `${this.baseUrl}/chat/session`,
+        method: 'patch',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      // 실제로 axios 인스턴스의 기본 헤더 확인
+      console.log('[chat.ts] axios.defaults.headers.common:', axios.defaults.headers.common);
+      // PATCH 요청
+      await axios.patch(
+        `${this.baseUrl}/chat/session`,
+        { chatSessionId, title },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAccessToken()}`,
+            'Accept': 'application/json'
+          }
+        }
+      );
       this.view.webview.postMessage({
         type: 'updateChatSessionTitleResponse',
         success: true

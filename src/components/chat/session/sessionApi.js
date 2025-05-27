@@ -26,11 +26,11 @@ export function requestCreateSession(title) {
 
 // 채팅 세션 제목 수정 요청 (프론트 → 익스텐션)
 export function requestUpdateSessionTitle(chatSessionId, title) {
-  console.log('[sessionApi] requestUpdateSessionTitle called', chatSessionId, title);
+  console.log('[sessionApi] requestUpdateSessionTitle called', {chatSessionId, title});
   return new Promise((resolve, reject) => {
     vscode.postMessage({
       type: 'updateChatSessionTitle',
-      chatSessionId: chatSessionId,
+      chatSessionId: typeof chatSessionId === 'object' ? chatSessionId.chatSessionId : chatSessionId,
       title: title
     });
 
