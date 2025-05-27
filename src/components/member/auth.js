@@ -1,5 +1,6 @@
 import { renderLoginView }    from './login.js';
 import { renderStartView }    from '../chat/chat_start.js';
+import { vscode } from '../api/vscodeApi.js';
 
 // 전역 인증 상태 및 사용자 정보
 window.__castleCoder_auth = { isAuthenticated: false, user: null };

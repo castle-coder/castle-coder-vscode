@@ -21,6 +21,10 @@ export class ChatMessageHandler {
         await this.handleGetChatSessionList();
         break;
 
+      case 'deleteChatSession':
+        await this.handleDeleteChatSession(message.chatSessionId);
+        break;
+
       default:
         break;
     }
@@ -119,6 +123,37 @@ export class ChatMessageHandler {
         type: 'getChatSessionListResponse',
         success: false,
         error: errMsg
+      });
+    }
+  }
+
+  private async handleDeleteChatSession(chatSessionId: number) {
+    try {
+      const res = await axios.delete(`${this.baseUrl}/chat/session`, {
+        data: { chatSessionId },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getAccessToken()}`,
+          'Accept': 'application/json'
+        }
+      });
+      this.view.webview.postMessage({
+        type: 'deleteChatSessionResponse',
+        success: true,
+        chatSessionId
+      });
+    } catch (err: unknown) {
+      let errMsg = '채팅 세션 삭제 중 오류가 발생했습니다.';
+      if (isAxiosError(err)) {
+        errMsg = err.response?.data?.message ?? err.message;
+      } else if (err instanceof Error) {
+        errMsg = err.message;
+      }
+      this.view.webview.postMessage({
+        type: 'deleteChatSessionResponse',
+        success: false,
+        error: errMsg,
+        chatSessionId
       });
     }
   }
