@@ -179,10 +179,16 @@ export class ChatMessageHandler {
         }
       });
       
+      // Transform the response data into the expected format
+      const transformedData = res.data.data.map((log: any) => [
+        { sender: 'You', text: log.prompt },
+        { sender: 'Bot', text: log.response }
+      ]).flat();
+      
       this.view.webview.postMessage({
         type: 'loadChatSessionResponse',
         success: true,
-        data: { messages: res.data.data }
+        data: transformedData
       });
     } catch (err: unknown) {
       console.error('[chat.ts] Error loading chat session:', err);
