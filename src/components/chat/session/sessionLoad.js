@@ -17,7 +17,6 @@ export const loadChatSession = async (chatSessionId) => {
                     if (message.error) {
                         reject(new Error(message.error));
                     } else {
-                        // The data is already in the correct format from chat.ts
                         resolve({ messages: message.data });
                     }
                 }

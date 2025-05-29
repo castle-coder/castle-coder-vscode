@@ -1,8 +1,8 @@
-// src/components/chat/chat_ing.js
-
 import { renderStartView } from './chat_start.js';
 import { logout } from '../member/auth.js';
 import { renderSessionList, renderSessionListOverlay } from '../chat/session/chat_session.js';
+import { sendLLMChatMessage } from './connect/codeGenerate.js';
+import { getSession } from '../chat/session/sessionState.js';
 
 // textarea 자동 높이 조절
 function autoResize(textarea) {
@@ -78,10 +78,9 @@ export function renderChatView(chatDataOrMessage) {
     return;
   }
 
-  // 초기 prompt 메시지 (기존 로직)
   if (chatDataOrMessage) {
     addMessage('You', chatDataOrMessage);
-    addMessage('Bot', chatDataOrMessage);
+    // addMessage('Bot', chatDataOrMessage); // 임시 로직 제거
   }
 
   // 입력창 세팅
@@ -103,19 +102,63 @@ export function renderChatView(chatDataOrMessage) {
       const msg = ta.value.trim();
       if (!msg) return;
       addMessage('You', msg);
-      addMessage('Bot', msg);
+      const currentSession = getSession();
+      console.log('[Debug] Sending message with session:', {
+        sessionId: currentSession.sessionId,
+        message: msg
+      });
+      // LLM 서버에 메시지 전송
+      sendLLMChatMessage({ chatSessionId: currentSession.sessionId, prompt: msg });
       ta.value = '';
       autoResize(ta);
     });
   }
 }
 
-// 웹뷰 메시지 리스너: newChat, showSessionList 처리
+// 웹뷰 메시지 리스너: newChat, showSessionList, llm-chat-response 처리
 window.addEventListener('message', ev => {
   if (ev.data.type === 'newChat') {
     renderStartView();
   }
   if (ev.data.type === 'showSessionList') {
     renderSessionListOverlay();
+  }
+  if (ev.data.type === 'llm-chat-response') {
+    console.log('[Debug] Received llm-chat-response:', {
+      data: ev.data.data,
+      sessionId: getSession().sessionId
+    });
+    // 응답 메시지 출력
+    const data = ev.data.data;
+    // message, content, text 등 다양한 필드에 대응
+    const botMsg = data.message || data.content || data.text || JSON.stringify(data);
+    const chatbox = document.getElementById('chatbox');
+    if (chatbox) {
+      const el = document.createElement('div');
+      el.className = 'chat-message bot';
+      el.innerHTML = `
+        <div class="sender">Bot</div>
+        <div class="text">${botMsg.replace(/\n/g,'<br>')}</div>
+      `;
+      chatbox.appendChild(el);
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+  }
+  if (ev.data.type === 'llm-chat-error') {
+    console.log('[Debug] Received llm-chat-error:', {
+      error: ev.data.error,
+      sessionId: getSession().sessionId
+    });
+    const chatbox = document.getElementById('chatbox');
+    if (chatbox) {
+      const el = document.createElement('div');
+      el.className = 'chat-message bot';
+      el.innerHTML = `
+        <div class="sender">Bot</div>
+        <div class="text">[Error] ${ev.data.error}</div>
+      `;
+      chatbox.appendChild(el);
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
   }
 });

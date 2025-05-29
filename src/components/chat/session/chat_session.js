@@ -2,6 +2,7 @@ import { attachDeleteHandlers } from './sessionDelete.js';
 import { requestChatSessionList } from './sessionApi.js';
 import { loadChatSession } from './sessionLoad.js';
 import { renderChatView } from '../chat_ing.js';
+import { setSession } from './sessionState.js';
 
 export async function renderSessionList() {
   const listDiv = document.getElementById('session-list');
@@ -28,7 +29,7 @@ export async function renderSessionList() {
     // 세션 리스트 렌더링 (DEL 버튼 포함)
     listDiv.innerHTML = sessions.map(
       s => `<div style="display:flex;align-items:center;margin-bottom:4px;">
-        <button class="session-item" data-id="${s.id}" style="flex:1; display: flex; align-items: center; width: 100%; text-align: left; background: #23272e; color: #fff; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; font-size: 1rem; transition: background 0.2s;">
+        <button class="session-item" data-id="${s.id}" data-title="${s.title || ''}" style="flex:1; display: flex; align-items: center; width: 100%; text-align: left; background: #23272e; color: #fff; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; font-size: 1rem; transition: background 0.2s;">
           <span style="display:inline-block;width:20px;height:20px;margin-right:12px;">
             <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
               <path d="M4 20V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7l-3 3z" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -44,12 +45,13 @@ export async function renderSessionList() {
     listDiv.querySelectorAll('.session-item').forEach(btn => {
       btn.addEventListener('click', async e => {
         const id = btn.getAttribute('data-id');
+        const title = btn.getAttribute('data-title') || '';
         try {
           const chatData = await loadChatSession(Number(id));
-          console.log('Loaded chatData:', chatData);
+          setSession(Number(id), title);
           renderChatView(chatData);
         } catch (error) {
-          console.error('Error loading chat session:', error);
+          console.error('[Debug] Error loading chat session:', { id, error });
         }
       });
     });
