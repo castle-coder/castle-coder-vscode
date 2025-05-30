@@ -1,4 +1,4 @@
-import { handleStartChat } from './chat_logic.js';
+import { handleStartChat, setChatSessionId } from './chat_logic.js';
 import { renderChatView } from './chat_ing.js';
 import { logout } from '../member/auth.js';
 import { requestCreateSession as createSession, requestUpdateSessionTitle as updateSessionTitle } from '../chat/session/sessionApi.js';
@@ -64,12 +64,21 @@ export function renderStartView() {
     });
   }
   if (btn && ta) {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const msg = ta.value.trim();
       const chatTitle = document.getElementById('chat-title').value.trim();
       if (msg) {
-        sendLLMChatMessage({ chatSessionId: window.currentChatSessionId, prompt: msg });
-        renderChatView(msg);
+        // 세션 생성
+        const sessionData = await createSession(chatTitle);
+        console.log('[Debug] createSession response:', sessionData);
+        // 실제 구조에 맞게 chatSessionId 추출
+        const sessionId = sessionData.chatSessionId || sessionData.sessionId || sessionData.id || (sessionData.data && (sessionData.data.chatSessionId || sessionData.data.sessionId || sessionData.data.id));
+        if (!sessionId) {
+          console.log('[Debug] 세션 ID 추출 실패');
+          return;
+        }
+        setChatSessionId(Number(sessionId));
+        handleStartChat(msg);
       }
     });
   }

@@ -48,10 +48,11 @@ export async function renderSessionList() {
         const title = btn.getAttribute('data-title') || '';
         try {
           const chatData = await loadChatSession(Number(id));
+
           setSession(Number(id), title);
           renderChatView(chatData);
         } catch (error) {
-          console.error('[Debug] Error loading chat session:', { id, error });
+          console.error('Error loading chat session:', error);
         }
       });
     });
