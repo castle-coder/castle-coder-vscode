@@ -12,7 +12,6 @@ function autoResize(textarea) {
 
 // 전역 addMessage 함수
 function addMessage(sender, text) {
-  console.log('[Debug] addMessage called. stack:', new Error().stack);
   const chatbox = document.getElementById('chatbox');
   console.log('[Debug] addMessage called. chatbox:', chatbox, 'sender:', sender, 'text:', text);
   if (!chatbox) return;
@@ -163,7 +162,7 @@ if (!window.__castleCoder_message_listener_registered) {
       }
       if (data.type === 'end') {
         console.log('[Debug] End message received. Final buffer:', llmBotBuffer);
-        addMessage('Bot', llmBotBuffer);
+        // addMessage('Bot', llmBotBuffer);
         llmBotBuffer = '';
       }
       return;
