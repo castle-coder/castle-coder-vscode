@@ -21,7 +21,11 @@ export function getChatSessionId() {
 }
 
 export function onSessionReady(callback) {
-  onSessionReadyCallback = callback;
+  if (chatSessionId) {
+    callback();
+  } else {
+    onSessionReadyCallback = callback;
+  }
 }
 
 window.addEventListener('message', ev => {

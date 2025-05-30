@@ -24,6 +24,7 @@ export class LLMMessageHandler {
         response.data.setEncoding('utf8');
         let buffer = '';
         response.data.on('data', (chunk: any) => {
+          console.log('[Debug][connectAi] Stream data chunk:', chunk);
           buffer += chunk;
           let boundary;
           while ((boundary = buffer.indexOf('\n')) >= 0) {
@@ -31,21 +32,32 @@ export class LLMMessageHandler {
             buffer = buffer.slice(boundary + 1);
             if (line) {
               try {
-                const msg = JSON.parse(line);
-                this.view.webview.postMessage({ type: 'llm-chat-response', data: msg });
-                if (msg.type === 'end') {
-                  response.data.destroy();
+                // SSE 포맷: data:로 시작하는 줄만 파싱
+                if (line.startsWith('data:')) {
+                  const jsonStr = line.replace(/^data:/, '').trim();
+                  if (jsonStr) {
+                    const msg = JSON.parse(jsonStr);
+                    console.log('[Debug][connectAi] Parsed stream message:', msg);
+                    this.view.webview.postMessage({ type: 'llm-chat-response', data: msg });
+                    if (msg.type === 'end') {
+                      response.data.destroy();
+                    }
+                  }
+                } else {
+                  // event: 등은 무시
+                  console.log('[Debug][connectAi] Ignored non-data line:', line);
                 }
               } catch (e) {
-                // JSON 파싱 에러 무시
+                console.error('[Debug][connectAi] JSON parse error:', e, 'line:', line);
               }
             }
           }
         });
         response.data.on('end', () => {
-          // 스트림 종료
+          console.log('[Debug][connectAi] Stream ended');
         });
       } catch (error: any) {
+        console.error('[Debug][connectAi] Error in handleMessage:', error);
         let errorMsg = error.message;
         if (error.response) {
           // 순환 참조 없는 안전한 값만 추출
