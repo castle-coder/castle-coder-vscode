@@ -5,18 +5,39 @@ import { sendLLMChatMessage } from './connect/codeGenerate.js';
 
 
 let chatSessionId = null;
+let onSessionReadyCallback = null;
+
 
 export function setChatSessionId(id) {
   chatSessionId = id;
+  if (onSessionReadyCallback) {
+    onSessionReadyCallback();
+    onSessionReadyCallback = null;
+  }
 }
 
 export function getChatSessionId() {
   return chatSessionId;
 }
 
+export function onSessionReady(callback) {
+  onSessionReadyCallback = callback;
+}
+
+window.addEventListener('message', ev => {
+  const { type, chatSessionId: newId, data } = ev.data;
+  if ((type === 'sessionCreated' || type === 'createChatSessionResponse') && 
+      (typeof newId === 'number' || (data && typeof data.chatSessionId === 'number'))) {
+    const sessionId = newId || (data && data.chatSessionId);
+    console.debug('[Debug] 받은 세션 ID:', sessionId);
+    setChatSessionId(sessionId);
+  }
+});
+
 export function handleStartChat(prompt) {
   const startApp = document.getElementById('chat-start-app');
   const chatApp = document.getElementById('chat-ing-app');
+  
   if (!chatSessionId) {
     console.error('chatSessionId가 설정되지 않았습니다!');
     return;

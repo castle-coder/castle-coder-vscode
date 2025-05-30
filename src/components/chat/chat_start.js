@@ -1,10 +1,9 @@
-import { handleStartChat, setChatSessionId } from './chat_logic.js';
+import { setChatSessionId, handleStartChat, onSessionReady } from './chat_logic.js';
 import { renderChatView } from './chat_ing.js';
 import { logout } from '../member/auth.js';
 import { requestCreateSession as createSession, requestUpdateSessionTitle as updateSessionTitle } from '../chat/session/sessionApi.js';
 import { setSession, getSession } from '../chat/session/sessionState.js';
 import { renderSessionList, renderSessionListOverlay } from '../chat/session/chat_session.js';
-import { sendLLMChatMessage } from './connect/codeGenerate.js';
 
 // textarea 자동 높이 조절
 function autoResize(textarea) {
@@ -67,18 +66,26 @@ export function renderStartView() {
     btn.addEventListener('click', async () => {
       const msg = ta.value.trim();
       const chatTitle = document.getElementById('chat-title').value.trim();
+      let { sessionId, title } = getSession();
       if (msg) {
-        // 세션 생성
-        const sessionData = await createSession(chatTitle);
-        console.log('[Debug] createSession response:', sessionData);
-        // 실제 구조에 맞게 chatSessionId 추출
-        const sessionId = sessionData.chatSessionId || sessionData.sessionId || sessionData.id || (sessionData.data && (sessionData.data.chatSessionId || sessionData.data.sessionId || sessionData.data.id));
         if (!sessionId) {
-          console.log('[Debug] 세션 ID 추출 실패');
-          return;
+          // 세션이 없을 때만 생성
+          const sessionData = await createSession(chatTitle);
+          console.log('[Debug] createSession response:', sessionData);
+          // 실제 구조에 맞게 chatSessionId 추출
+          sessionId = sessionData.chatSessionId || sessionData.sessionId || sessionData.id || (sessionData.data && (sessionData.data.chatSessionId || sessionData.data.sessionId || sessionData.data.id));
+          if (!sessionId) {
+            console.log('[Debug] 세션 ID 추출 실패');
+            return;
+          }
+          setSession(sessionId, chatTitle);
+          // 콜백 등록만 하고 setChatSessionId는 호출하지 않음
+          onSessionReady(() => {
+            handleStartChat(msg);
+          });
+        } else {
+          handleStartChat(msg);
         }
-        setChatSessionId(Number(sessionId));
-        handleStartChat(msg);
       }
     });
   }
