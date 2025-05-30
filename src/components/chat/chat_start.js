@@ -1,9 +1,10 @@
-import { handleStartChat } from './chat_logic.js';
+import { handleStartChat, setChatSessionId } from './chat_logic.js';
 import { renderChatView } from './chat_ing.js';
 import { logout } from '../member/auth.js';
 import { requestCreateSession as createSession, requestUpdateSessionTitle as updateSessionTitle } from '../chat/session/sessionApi.js';
 import { setSession, getSession } from '../chat/session/sessionState.js';
 import { renderSessionList, renderSessionListOverlay } from '../chat/session/chat_session.js';
+import { sendLLMChatMessage } from './connect/codeGenerate.js';
 
 // textarea 자동 높이 조절
 function autoResize(textarea) {
@@ -12,6 +13,9 @@ function autoResize(textarea) {
 }
 
 export function renderStartView() {
+  // 새로운 채팅 시작 시 세션 상태 초기화
+  window.__castleCoder_session = {};
+  
   const startApp  = document.getElementById('chat-start-app');
   const memberApp = document.getElementById('member-app');
   const chatApp   = document.getElementById('chat-ing-app');
@@ -60,11 +64,21 @@ export function renderStartView() {
     });
   }
   if (btn && ta) {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const msg = ta.value.trim();
       const chatTitle = document.getElementById('chat-title').value.trim();
       if (msg) {
-        handleStartChat({ message: msg, title: chatTitle });
+        // 세션 생성
+        const sessionData = await createSession(chatTitle);
+        console.log('[Debug] createSession response:', sessionData);
+        // 실제 구조에 맞게 chatSessionId 추출
+        const sessionId = sessionData.chatSessionId || sessionData.sessionId || sessionData.id || (sessionData.data && (sessionData.data.chatSessionId || sessionData.data.sessionId || sessionData.data.id));
+        if (!sessionId) {
+          console.log('[Debug] 세션 ID 추출 실패');
+          return;
+        }
+        setChatSessionId(Number(sessionId));
+        handleStartChat(msg);
       }
     });
   }

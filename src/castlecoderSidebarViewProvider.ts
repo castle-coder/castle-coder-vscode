@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import axios, { AxiosError, isAxiosError } from 'axios';
 import { MessageHandler } from './messageHandler/login_register';
 import { ChatMessageHandler } from './messageHandler/chat';
+import { LLMMessageHandler } from './messageHandler/connectAi';
 
 export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'castleCoder.openview';
@@ -10,6 +11,7 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
   private baseUrl = 'http://13.125.85.38:8080/api/v1';
   private _messageHandler?: MessageHandler;
   private _chatMessageHandler?: ChatMessageHandler;
+  private _llmMessageHandler?: LLMMessageHandler;
 
   constructor(private readonly _extensionUri: vscode.Uri) {}
 
@@ -21,6 +23,7 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
     this._view = webviewView;
     this._messageHandler = new MessageHandler(webviewView);
     this._chatMessageHandler = new ChatMessageHandler(webviewView);
+    this._llmMessageHandler = new LLMMessageHandler(webviewView);
 
     webviewView.webview.options = {
       enableScripts: true,
@@ -38,6 +41,8 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
         message.type === 'loadChatSession'
       ) {
         await this._chatMessageHandler?.handleMessage(message);
+      } else if (message.type === 'llm-chat') {
+        await this._llmMessageHandler?.handleMessage(message);
       } else {
         await this._messageHandler?.handleMessage(message);
       }
