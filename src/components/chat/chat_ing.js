@@ -1,8 +1,10 @@
 import { renderStartView } from './chat_start.js';
 import { logout } from '../member/auth.js';
 import { renderSessionList, renderSessionListOverlay } from '../chat/session/chat_session.js';
-import { handleSendMessage } from './chat_logic.js';
 import { getSession } from '../chat/session/sessionState.js';
+import { uploadImage } from './imageUrl/imageUpload.js';
+import { deleteImage } from './imageUrl/imageDelete.js';
+import { getChatSessionId, handleSendMessage } from './chat_logic.js';
 
 // textarea 자동 높이 조절
 function autoResize(textarea) {
@@ -74,7 +76,7 @@ export function renderChatView(chatDataOrMessage) {
           <button id="image-upload-btn-ing" title="이미지 첨부" type="button" style="margin-right:8px; background:transparent; border:none; cursor:pointer;">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" fill="none"/><path d="M4 5C4 4.44772 4.44772 4 5 4H19C19.5523 4 20 4.44772 20 5V19C20 19.5523 19.5523 20 19 20H5C4.44772 20 4 19.5523 4 19V5Z" stroke="#bbb" stroke-width="1.5"/><path d="M8 13L11 16L16 11" stroke="#bbb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8.5" cy="8.5" r="1.5" fill="#bbb"/></svg>
           </button>
-          <span id="image-file-names-ing" class="image-file-names" style="color:#eee;font-size:0.95em;margin-left:2px;"></span>
+          <div id="image-file-list-ing" class="image-file-list" style="display:flex;gap:4px;"></div>
           <textarea id="ask-input" rows="1" placeholder="Ask more..."></textarea>
           <button id="send-btn" class="sharp-btn">Send</button>
         </div>
@@ -133,6 +135,53 @@ export function renderChatView(chatDataOrMessage) {
     });
   }
 
+  // 첨부 이미지 리스트 (imageUrl, fileName)
+  let attachedImages = [];
+
+  // 이미지 업로드 버튼 이벤트
+  document.getElementById('image-upload-btn-ing').onclick = function() {
+    document.getElementById('image-upload-ing').click();
+  };
+  // 파일 선택 시 서버 업로드
+  document.getElementById('image-upload-ing').onchange = async function(e) {
+    const files = Array.from(e.target.files);
+    for (const file of files) {
+      try {
+        const result = await uploadImage(file);
+        console.log('[첨부 성공]', result);
+        attachedImages.push(result);
+        renderFileList(attachedImages);
+      } catch (err) {
+        console.error('[첨부 실패]', err);
+      }
+    }
+    e.target.value = '';
+  };
+  // 첨부 리스트 렌더링 함수 (imageUrl, fileName 기반)
+  function renderFileList(list) {
+    const listDiv = document.getElementById('image-file-list-ing');
+    listDiv.innerHTML = '';
+    list.forEach((item, idx) => {
+      const fileSpan = document.createElement('span');
+      fileSpan.textContent = item.fileName;
+      fileSpan.style.cssText = 'color:#eee;font-size:0.95em; background:#222; border-radius:4px; padding:2px 6px; margin-right:2px; display:inline-flex; align-items:center;';
+      const delBtn = document.createElement('button');
+      delBtn.textContent = '✕';
+      delBtn.style.cssText = 'margin-left:4px; background:none; border:none; color:#bbb; font-size:1em; cursor:pointer;';
+      delBtn.onclick = async function() {
+        try {
+          await deleteImage(item.imageUrl);
+          attachedImages.splice(idx, 1);
+          renderFileList(attachedImages);
+        } catch (err) {
+          console.error('[삭제 실패]', err);
+        }
+      };
+      fileSpan.appendChild(delBtn);
+      listDiv.appendChild(fileSpan);
+    });
+  }
+
   // 전송 버튼
   if (btn && ta) {
     console.log('[Debug] Registering send button event listener');
@@ -140,22 +189,14 @@ export function renderChatView(chatDataOrMessage) {
       const msg = ta.value.trim();
       console.log('[Debug] Send button clicked:', msg);
       if (!msg) return;
-      handleSendMessage(msg);
+      const imageUrls = attachedImages.map(img => img.imageUrl);
+      handleSendMessage(msg, imageUrls);
       ta.value = '';
       autoResize(ta);
+      attachedImages = [];
+      renderFileList(attachedImages);
     });
   }
-
-  // 이미지 업로드 버튼 이벤트
-  document.getElementById('image-upload-btn-ing').onclick = function() {
-    document.getElementById('image-upload-ing').click();
-  };
-  // 파일 선택 시 파일명 표시
-  document.getElementById('image-upload-ing').onchange = function(e) {
-    const files = Array.from(e.target.files);
-    const names = files.map(f => f.name).join(', ');
-    document.getElementById('image-file-names-ing').textContent = names;
-  };
 }
 
 let llmBotBuffer = '';

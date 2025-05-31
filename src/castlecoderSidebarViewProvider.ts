@@ -5,6 +5,7 @@ import { MessageHandler } from './messageHandler/login_register';
 import { ChatMessageHandler } from './messageHandler/chat';
 import { LLMMessageHandler } from './messageHandler/connectAi';
 import { SecurityRefactoringHandler } from './messageHandler/securityRefactoring';
+import { ImageManageHandler } from './messageHandler/imageManage';
 
 export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'castleCoder.openview';
@@ -14,6 +15,7 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
   private _chatMessageHandler?: ChatMessageHandler;
   private _llmMessageHandler?: LLMMessageHandler;
   private _securityRefactoringHandler?: SecurityRefactoringHandler;
+  private _imageManageHandler?: ImageManageHandler;
 
   constructor(private readonly _extensionUri: vscode.Uri) {}
 
@@ -27,6 +29,7 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
     this._chatMessageHandler = new ChatMessageHandler(webviewView);
     this._llmMessageHandler = new LLMMessageHandler(webviewView);
     this._securityRefactoringHandler = new SecurityRefactoringHandler(webviewView);
+    this._imageManageHandler = new ImageManageHandler(webviewView);
 
     webviewView.webview.options = {
       enableScripts: true,
@@ -48,6 +51,10 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
         await this._llmMessageHandler?.handleMessage(message);
       } else if (message.type === 'securityPrompt') {
         await this._securityRefactoringHandler?.handleMessage(message);
+      } else if (message.type === 'uploadImage') {
+        await this._imageManageHandler?.handleMessage(message);
+      } else if (message.type === 'deleteImage') {
+        await this._imageManageHandler?.handleMessage(message);
       } else {
         await this._messageHandler?.handleMessage(message);
       }
