@@ -71,8 +71,8 @@
       "editor/context": [
         {
           "command": "castleCoder.securityRefactor",
-          "when": "editorTextFocus && editorHasSelection",
-          "group": "2_modification"
+          "when": "editorTextFocus",
+          "group": "2_castleCoder"
         }
       ]
     }
