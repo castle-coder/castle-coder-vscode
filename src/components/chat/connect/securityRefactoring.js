@@ -19,10 +19,8 @@ export class SecurityRefactoring {
           sessionTitle: message.sessionTitle
         });
         // 기존 디버깅 및 UI 로직도 유지
-        console.log('[CastleCoder] Webview: handleSecurityPrompt', message.prompt);
         await this.handleSecurityPrompt(message.prompt);
       } else if (message.type === 'securityResponse') {
-        console.log('[CastleCoder] Webview: handleSecurityResponse', message.data);
         this.handleSecurityResponse(message.data);
       } else if (message.type === 'securityError') {
         console.error('[CastleCoder] Webview: handleSecurityError', message.error);

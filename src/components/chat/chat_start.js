@@ -4,6 +4,9 @@ import { logout } from '../member/auth.js';
 import { requestCreateSession as createSession, requestUpdateSessionTitle as updateSessionTitle } from '../chat/session/sessionApi.js';
 import { setSession, getSession } from '../chat/session/sessionState.js';
 import { renderSessionList, renderSessionListOverlay } from '../chat/session/chat_session.js';
+import { uploadImage } from './imageUrl/imageUpload.js';
+import { deleteImage } from './imageUrl/imageDelete.js';
+import { sendLLMChatMessage, sendLLMChatMessageWithImage } from './connect/codeGenerate.js';
 
 // textarea 자동 높이 조절
 function autoResize(textarea) {
@@ -36,9 +39,16 @@ export function renderStartView() {
         <h1 style="margin:0; font-size: 2rem; letter-spacing: -2px;">Ask Castle Coder</h1>
         <a href="#" id="chat-start-logout" class="text-link" style="margin-left: 24px; font-size: 1.2rem; color: #888;">Logout</a>
       </div>
-      <div class="chat-input-area" style="display: flex; gap: 8px; align-items: center; width: 100%;">
-        <textarea id="first-question" rows="2" placeholder="Write your first question" style="flex: 1 1 0; min-width: 0; width: 100%; resize: vertical; box-sizing: border-box;"></textarea>
-        <button id="start-btn" style="height: 40px; min-width: 80px;">Start</button>
+      <div class="chat-input-area">
+        <div class="input-row">
+          <input type="file" id="image-upload-start" accept="image/*" style="display:none" multiple />
+          <button id="image-upload-btn-start" title="이미지 첨부" type="button" style="margin-right:8px; background:transparent; border:none; cursor:pointer;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" fill="none"/><path d="M4 5C4 4.44772 4.44772 4 5 4H19C19.5523 4 20 4.44772 20 5V19C20 19.5523 19.5523 20 19 20H5C4.44772 20 4 19.5523 4 19V5Z" stroke="#bbb" stroke-width="1.5"/><path d="M8 13L11 16L16 11" stroke="#bbb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8.5" cy="8.5" r="1.5" fill="#bbb"/></svg>
+          </button>
+          <div id="image-file-list-start" class="image-file-list" style="display:flex;gap:4px;"></div>
+          <textarea id="first-question" rows="2" placeholder="Write your first question"></textarea>
+          <button id="start-btn" class="sharp-btn">Start</button>
+        </div>
       </div>
     </div>
   `;
@@ -81,10 +91,18 @@ export function renderStartView() {
           setSession(sessionId, chatTitle);
           // 콜백 등록만 하고 setChatSessionId는 호출하지 않음
           onSessionReady(() => {
-            handleStartChat(msg);
+            handleStartChat(msg, attachedImages.map(img => img.imageUrl));
+            ta.value = '';
+            autoResize(ta);
+            attachedImages = [];
+            renderFileList(attachedImages);
           });
         } else {
-          handleStartChat(msg);
+          handleStartChat(msg, attachedImages.map(img => img.imageUrl));
+          ta.value = '';
+          autoResize(ta);
+          attachedImages = [];
+          renderFileList(attachedImages);
         }
       }
     });
@@ -144,6 +162,53 @@ export function renderStartView() {
     titleInput.addEventListener('input', updateInputWidth);
     titleInput.addEventListener('change', updateInputWidth);
     titleInput.addEventListener('blur', updateInputWidth);
+  }
+
+  // 첨부 이미지 리스트 (imageUrl, fileName)
+  let attachedImages = [];
+
+  // 이미지 업로드 버튼 이벤트
+  document.getElementById('image-upload-btn-start').onclick = function() {
+    document.getElementById('image-upload-start').click();
+  };
+  // 파일 선택 시 서버 업로드
+  document.getElementById('image-upload-start').onchange = async function(e) {
+    const files = Array.from(e.target.files);
+    for (const file of files) {
+      try {
+        const result = await uploadImage(file);
+        console.log('[첨부 성공]', result);
+        attachedImages.push(result);
+        renderFileList(attachedImages);
+      } catch (err) {
+        console.error('[첨부 실패]', err);
+      }
+    }
+    e.target.value = '';
+  };
+  // 첨부 리스트 렌더링 함수 (imageUrl, fileName 기반)
+  function renderFileList(list) {
+    const listDiv = document.getElementById('image-file-list-start');
+    listDiv.innerHTML = '';
+    list.forEach((item, idx) => {
+      const fileSpan = document.createElement('span');
+      fileSpan.textContent = item.fileName;
+      fileSpan.style.cssText = 'color:#eee;font-size:0.95em; background:#222; border-radius:4px; padding:2px 6px; margin-right:2px; display:inline-flex; align-items:center;';
+      const delBtn = document.createElement('button');
+      delBtn.textContent = '✕';
+      delBtn.style.cssText = 'margin-left:4px; background:none; border:none; color:#bbb; font-size:1em; cursor:pointer;';
+      delBtn.onclick = async function() {
+        try {
+          await deleteImage(item.imageUrl);
+          attachedImages.splice(idx, 1);
+          renderFileList(attachedImages);
+        } catch (err) {
+          console.error('[삭제 실패]', err);
+        }
+      };
+      fileSpan.appendChild(delBtn);
+      listDiv.appendChild(fileSpan);
+    });
   }
 
   renderSessionList();

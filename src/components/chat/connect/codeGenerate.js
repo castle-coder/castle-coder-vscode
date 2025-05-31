@@ -8,3 +8,13 @@ export function sendLLMChatMessage({ chatSessionId, prompt }) {
     prompt
   });
 }
+
+export function sendLLMChatMessageWithImage({ chatSessionId, prompt, imageUrls }) {
+  console.log('LLM 요청 (이미지 포함):', { chatSessionId, prompt, imageUrls });
+  vscode.postMessage({
+    type: 'llm-chat',
+    chatSessionId,
+    prompt,
+    imageUrls
+  });
+}

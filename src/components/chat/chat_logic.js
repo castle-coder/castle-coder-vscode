@@ -1,5 +1,5 @@
 import { renderChatView } from './chat_ing.js';  
-import { sendLLMChatMessage } from './connect/codeGenerate.js';
+import { sendLLMChatMessage, sendLLMChatMessageWithImage } from './connect/codeGenerate.js';
 import { setSession } from './session/sessionState.js';
 import { renderSessionList } from './session/chat_session.js';
 
@@ -48,7 +48,7 @@ window.addEventListener('message', ev => {
   }
 });
 
-export function handleStartChat(prompt) {
+export function handleStartChat(prompt, imageUrls = []) {
   const startApp = document.getElementById('chat-start-app');
   const chatApp = document.getElementById('chat-ing-app');
   
@@ -56,10 +56,11 @@ export function handleStartChat(prompt) {
     console.error('chatSessionId가 설정되지 않았습니다!');
     return;
   }
-  sendLLMChatMessage({
-    chatSessionId,
-    prompt
-  });
+  if (imageUrls && imageUrls.length > 0) {
+    sendLLMChatMessageWithImage({ chatSessionId, prompt, imageUrls });
+  } else {
+    sendLLMChatMessage({ chatSessionId, prompt });
+  }
   if (startApp && chatApp) {
     startApp.style.display = 'none';  
     chatApp.style.display = 'block';  
@@ -69,13 +70,14 @@ export function handleStartChat(prompt) {
   }
 }
 
-export function handleSendMessage(prompt) {
+export function handleSendMessage(prompt, imageUrls = []) {
   if (!chatSessionId) {
     console.error('chatSessionId가 설정되지 않았습니다!');
     return;
   }
-  sendLLMChatMessage({
-    chatSessionId,
-    prompt
-  });
+  if (imageUrls && imageUrls.length > 0) {
+    sendLLMChatMessageWithImage({ chatSessionId, prompt, imageUrls });
+  } else {
+    sendLLMChatMessage({ chatSessionId, prompt });
+  }
 }
