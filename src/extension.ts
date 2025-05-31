@@ -38,25 +38,32 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showWarningMessage('No active editor found');
         return;
       }
-      const selection = editor.selection;
-      const code = editor.document.getText(selection).trim();
+      
+      // 전체 파일 내용 가져오기
+      const code = editor.document.getText();
       if (!code) {
-        vscode.window.showWarningMessage('Select some code to refactor');
+        vscode.window.showWarningMessage('File is empty');
         return;
       }
 
+      // 파일 이름 가져오기 (확장자 제외)
+      const fileName = editor.document.fileName.split('/').pop()?.split('.')[0] || 'unknown';
+      const sessionTitle = `${fileName} 보안 점검`;
+
+      // 디버깅 로그
+      console.log('[CastleCoder] Security Refactor command executed');
+      vscode.window.showInformationMessage(`[CastleCoder] Security Refactor 명령 실행: ${sessionTitle}`);
+
       // 사이드바 활성화
       await vscode.commands.executeCommand('castleCoder.openview');
-      // 잠시 딜레이를 줘야 웹뷰가 렌더링됨
       await new Promise((r) => setTimeout(r, 50));
 
-      // 사용자 프롬프트 전송
+      // 사용자 프롬프트 전송 (securityPrompt 타입)
       const prompt = `Refactor the following code to be more secure:\n\n${code}`;
-      provider.sendUserPrompt(prompt);
+      provider.sendSecurityPrompt(prompt, sessionTitle);
     })
   );
 
-  // 5) (선택) 테스트용 명령어
   const openChatView = vscode.commands.registerCommand(
     'castleCoder.openChatView',
     () => {

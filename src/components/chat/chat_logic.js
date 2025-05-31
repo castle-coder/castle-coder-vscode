@@ -1,5 +1,7 @@
 import { renderChatView } from './chat_ing.js';  
 import { sendLLMChatMessage } from './connect/codeGenerate.js';
+import { setSession } from './session/sessionState.js';
+import { renderSessionList } from './session/chat_session.js';
 
 
 
@@ -29,12 +31,20 @@ export function onSessionReady(callback) {
 }
 
 window.addEventListener('message', ev => {
-  const { type, chatSessionId: newId, data } = ev.data;
+  const { type, chatSessionId: newId, data, sessionTitle } = ev.data;
   if ((type === 'sessionCreated' || type === 'createChatSessionResponse') && 
       (typeof newId === 'number' || (data && typeof data.chatSessionId === 'number'))) {
     const sessionId = newId || (data && data.chatSessionId);
-    console.debug('[Debug] 받은 세션 ID:', sessionId);
+    console.debug('[Debug] 받은 세션 ID:', sessionId, 'sessionTitle:', sessionTitle);
     setChatSessionId(sessionId);
+    if (sessionTitle) {
+      setSession(sessionId, sessionTitle);
+      console.debug('[Debug] setSession 호출:', sessionId, sessionTitle);
+    }
+    if (typeof renderSessionList === 'function') {
+      renderSessionList();
+      console.debug('[Debug] renderSessionList 호출');
+    }
   }
 });
 

@@ -4,6 +4,7 @@ import axios, { AxiosError, isAxiosError } from 'axios';
 import { MessageHandler } from './messageHandler/login_register';
 import { ChatMessageHandler } from './messageHandler/chat';
 import { LLMMessageHandler } from './messageHandler/connectAi';
+import { SecurityRefactoringHandler } from './messageHandler/securityRefactoring';
 
 export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = 'castleCoder.openview';
@@ -12,6 +13,7 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
   private _messageHandler?: MessageHandler;
   private _chatMessageHandler?: ChatMessageHandler;
   private _llmMessageHandler?: LLMMessageHandler;
+  private _securityRefactoringHandler?: SecurityRefactoringHandler;
 
   constructor(private readonly _extensionUri: vscode.Uri) {}
 
@@ -24,6 +26,7 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
     this._messageHandler = new MessageHandler(webviewView);
     this._chatMessageHandler = new ChatMessageHandler(webviewView);
     this._llmMessageHandler = new LLMMessageHandler(webviewView);
+    this._securityRefactoringHandler = new SecurityRefactoringHandler(webviewView);
 
     webviewView.webview.options = {
       enableScripts: true,
@@ -43,6 +46,8 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
         await this._chatMessageHandler?.handleMessage(message);
       } else if (message.type === 'llm-chat') {
         await this._llmMessageHandler?.handleMessage(message);
+      } else if (message.type === 'securityPrompt') {
+        await this._securityRefactoringHandler?.handleMessage(message);
       } else {
         await this._messageHandler?.handleMessage(message);
       }
@@ -56,6 +61,15 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
   public sendUserPrompt(prompt: string) {
     this._view?.webview.postMessage({ type: 'userPrompt', prompt });
   }
+
+  public sendSecurityPrompt(prompt: string, sessionTitle: string) {
+    this._view?.webview.postMessage({ 
+      type: 'securityPrompt', 
+      prompt,
+      sessionTitle 
+    });
+  }
+  // sessionTitle이 필요한가? 
 
   public showSessionList() {
     this._view?.webview.postMessage({ type: 'showSessionList' });
@@ -77,6 +91,9 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
     const chatStartStyleUri  = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'chat', 'chat_start.css'));
     const chatIngUri         = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'chat', 'chat_ing.js'));
     const chatIngStyleUri    = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'chat', 'chat_ing.css'));
+    const securityRefactoringUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'chat', 'connect', 'securityRefactoring.js')
+    );
 
     const cspMeta = `
       <meta http-equiv="Content-Security-Policy"
@@ -120,6 +137,7 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
   <script type="module" nonce="${nonce}" src="${chatLogicUri}"></script>
   <script type="module" nonce="${nonce}" src="${chatStartUri}"></script>
   <script type="module" nonce="${nonce}" src="${chatIngUri}"></script>
+  <script type="module" nonce="${nonce}" src="${securityRefactoringUri}"></script>
 </body>
 </html>`;
   }
