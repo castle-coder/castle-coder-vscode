@@ -36,9 +36,16 @@ export function renderStartView() {
         <h1 style="margin:0; font-size: 2rem; letter-spacing: -2px;">Ask Castle Coder</h1>
         <a href="#" id="chat-start-logout" class="text-link" style="margin-left: 24px; font-size: 1.2rem; color: #888;">Logout</a>
       </div>
-      <div class="chat-input-area" style="display: flex; gap: 8px; align-items: center; width: 100%;">
-        <textarea id="first-question" rows="2" placeholder="Write your first question" style="flex: 1 1 0; min-width: 0; width: 100%; resize: vertical; box-sizing: border-box;"></textarea>
-        <button id="start-btn" style="height: 40px; min-width: 80px;">Start</button>
+      <div class="chat-input-area">
+        <div class="input-row">
+          <input type="file" id="image-upload-start" accept="image/*" style="display:none" multiple />
+          <button id="image-upload-btn-start" title="이미지 첨부" type="button" style="margin-right:8px; background:transparent; border:none; cursor:pointer;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" fill="none"/><path d="M4 5C4 4.44772 4.44772 4 5 4H19C19.5523 4 20 4.44772 20 5V19C20 19.5523 19.5523 20 19 20H5C4.44772 20 4 19.5523 4 19V5Z" stroke="#bbb" stroke-width="1.5"/><path d="M8 13L11 16L16 11" stroke="#bbb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8.5" cy="8.5" r="1.5" fill="#bbb"/></svg>
+          </button>
+          <span id="image-file-names-start" class="image-file-names" style="color:#eee;font-size:0.95em;margin-left:2px;"></span>
+          <textarea id="first-question" rows="2" placeholder="Write your first question"></textarea>
+          <button id="start-btn" class="sharp-btn">Start</button>
+        </div>
       </div>
     </div>
   `;
@@ -145,6 +152,17 @@ export function renderStartView() {
     titleInput.addEventListener('change', updateInputWidth);
     titleInput.addEventListener('blur', updateInputWidth);
   }
+
+  // 이미지 업로드 버튼 이벤트
+  document.getElementById('image-upload-btn-start').onclick = function() {
+    document.getElementById('image-upload-start').click();
+  };
+  // 파일 선택 시 파일명 표시
+  document.getElementById('image-upload-start').onchange = function(e) {
+    const files = Array.from(e.target.files);
+    const names = files.map(f => f.name).join(', ');
+    document.getElementById('image-file-names-start').textContent = names;
+  };
 
   renderSessionList();
 }

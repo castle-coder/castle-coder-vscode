@@ -69,8 +69,15 @@ export function renderChatView(chatDataOrMessage) {
       </div>
       <div class="chatbox" id="chatbox"></div>
       <div class="chat-input-area">
-        <textarea id="ask-input" rows="1" placeholder="Ask more..."></textarea>
-        <button id="send-btn">Send</button>
+        <div class="input-row">
+          <input type="file" id="image-upload-ing" accept="image/*" style="display:none" multiple />
+          <button id="image-upload-btn-ing" title="이미지 첨부" type="button" style="margin-right:8px; background:transparent; border:none; cursor:pointer;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" fill="none"/><path d="M4 5C4 4.44772 4.44772 4 5 4H19C19.5523 4 20 4.44772 20 5V19C20 19.5523 19.5523 20 19 20H5C4.44772 20 4 19.5523 4 19V5Z" stroke="#bbb" stroke-width="1.5"/><path d="M8 13L11 16L16 11" stroke="#bbb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8.5" cy="8.5" r="1.5" fill="#bbb"/></svg>
+          </button>
+          <span id="image-file-names-ing" class="image-file-names" style="color:#eee;font-size:0.95em;margin-left:2px;"></span>
+          <textarea id="ask-input" rows="1" placeholder="Ask more..."></textarea>
+          <button id="send-btn" class="sharp-btn">Send</button>
+        </div>
       </div>
     </div>
   `;
@@ -138,6 +145,17 @@ export function renderChatView(chatDataOrMessage) {
       autoResize(ta);
     });
   }
+
+  // 이미지 업로드 버튼 이벤트
+  document.getElementById('image-upload-btn-ing').onclick = function() {
+    document.getElementById('image-upload-ing').click();
+  };
+  // 파일 선택 시 파일명 표시
+  document.getElementById('image-upload-ing').onchange = function(e) {
+    const files = Array.from(e.target.files);
+    const names = files.map(f => f.name).join(', ');
+    document.getElementById('image-file-names-ing').textContent = names;
+  };
 }
 
 let llmBotBuffer = '';

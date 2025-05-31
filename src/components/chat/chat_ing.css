@@ -64,38 +64,32 @@ html, body, #app, #chat-ing-app {
 
 /* 7) 입력창 래퍼 */
 #chat-ing-app .chat-container .chat-input-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
   position: relative;
 }
 
 /* 8) 텍스트 입력창 */
 #chat-ing-app textarea#ask-input {
-  width: calc(100% - 80px);  /* Send 버튼 영역 제외 */
+  flex: 1 1 0;
   min-height: 40px;
-  padding: 6px 8px;
+  padding: 6px 12px;
   background: transparent;
-  border: 1px solid #555;
-  border-radius: 4px;
+  border: 1.5px solid #555;
+  border-radius: 6px;
   color: #fff;
-  font-size: 14px;
+  font-size: 15px;
   resize: none;
-  overflow: hidden;
   outline: none;
   box-sizing: border-box;
 }
 
 /* 9) 전송 버튼 */
 #chat-ing-app button#send-btn {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  width: 60px;
-  height: 28px;
-  background: #3a914b;
-  border: none;
-  border-radius: 4px;
-  color: #fff;
-  font-size: 14px;
-  cursor: pointer;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 /* 10) 보조 안내 문구 */
@@ -120,4 +114,69 @@ html, body, #app, #chat-ing-app {
 
 .text-link:hover {
   text-decoration: underline;
+}
+
+.sharp-btn {
+  background: linear-gradient(90deg, #43a047 60%, #388e3c 100%);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 0 28px;
+  height: 44px;
+  min-width: 90px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(60,120,60,0.10);
+  transition: background 0.18s, box-shadow 0.18s, transform 0.12s;
+  letter-spacing: 0.5px;
+  margin-left: 0;
+  margin-right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sharp-btn:hover, .sharp-btn:focus {
+  background: linear-gradient(90deg, #4caf50 60%, #2e7d32 100%);
+  box-shadow: 0 4px 16px rgba(60,120,60,0.18);
+  transform: translateY(-1px) scale(1.04);
+}
+
+.input-row {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  background: #181818;
+  padding: 0 4px 0 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+.input-row textarea,
+.input-row input[type='text'] {
+  flex: 1 1 0;
+  min-height: 40px;
+  background: transparent;
+  border: none !important;
+  color: #fff;
+  font-size: 15px;
+  padding: 8px 12px;
+  outline: none;
+  resize: none;
+  box-sizing: border-box;
+  box-shadow: none;
+}
+.input-row textarea:focus,
+.input-row input[type='text']:focus {
+  border: none !important;
+  box-shadow: none;
+}
+.input-row .sharp-btn {
+  height: 36px;
+  min-width: 72px;
+  font-size: 15px;
+  padding: 0 18px;
+  border-radius: 6px;
+  margin: 0 4px 0 0;
+  box-shadow: none;
 }

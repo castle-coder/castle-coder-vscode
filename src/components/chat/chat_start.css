@@ -15,18 +15,28 @@ html, body, #app, #chat-start-app {
   margin:0; font-size:14px; color:#bbb; line-height:1.4;
 }
 #chat-start-app .start-container .chat-input-area {
-  position:relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  position: relative;
 }
 #chat-start-app .start-container textarea#first-question {
-  width:100%; min-height:40px; padding:8px 70px 8px 8px;
-  background:transparent; border:1px solid #555; border-radius:4px;
-  color:#fff; font-size:14px; resize:none; overflow:hidden; outline:none;
-  box-sizing:border-box;
+  flex: 1 1 0;
+  min-height: 40px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1.5px solid #555;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 15px;
+  resize: none;
+  outline: none;
+  box-sizing: border-box;
 }
 #chat-start-app .start-container button#start-btn {
-  position:absolute; right:8px; bottom:8px;
-  width:60px; height:28px; background:#3a914b; border:none;
-  border-radius:4px; color:#fff; font-size:14px; cursor:pointer;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 .chat-header {
@@ -44,4 +54,64 @@ html, body, #app, #chat-start-app {
 
 .text-link:hover {
   text-decoration: underline;
+}
+
+.sharp-btn {
+  background: linear-gradient(90deg, #3a914b 60%, #2e7d32 100%);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 0 22px;
+  height: 38px;
+  min-width: 80px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(60,120,60,0.08);
+  transition: background 0.18s, box-shadow 0.18s, transform 0.12s;
+  letter-spacing: 0.5px;
+}
+.sharp-btn:hover, .sharp-btn:focus {
+  background: linear-gradient(90deg, #43a047 60%, #388e3c 100%);
+  box-shadow: 0 4px 16px rgba(60,120,60,0.16);
+  transform: translateY(-1px) scale(1.03);
+}
+
+.input-row {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  background: #181818;
+  padding: 0 4px 0 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+.input-row textarea,
+.input-row input[type='text'] {
+  flex: 1 1 0;
+  min-height: 40px;
+  background: transparent;
+  border: none !important;
+  color: #fff;
+  font-size: 15px;
+  padding: 8px 12px;
+  outline: none;
+  resize: none;
+  box-sizing: border-box;
+  box-shadow: none;
+}
+.input-row textarea:focus,
+.input-row input[type='text']:focus {
+  border: none !important;
+  box-shadow: none;
+}
+.input-row .sharp-btn {
+  height: 36px;
+  min-width: 72px;
+  font-size: 15px;
+  padding: 0 18px;
+  border-radius: 6px;
+  margin: 0 4px 0 0;
+  box-shadow: none;
 }

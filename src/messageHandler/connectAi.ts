@@ -9,16 +9,22 @@ export class LLMMessageHandler {
 
   async handleMessage(message: any) {
     if (message.type === 'llm-chat') {
-      const { chatSessionId, prompt } = message;
+      const { chatSessionId, prompt, imageUrls } = message;
       try {
         const headers = {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${getAccessToken()}`,
           'Accept': 'text/event-stream'
         };
+        
+        // imageUrls가 있으면 포함, 없으면 제외
+        const requestBody = imageUrls 
+          ? { chatSessionId, prompt, imageUrls }
+          : { chatSessionId, prompt };
+
         const response = await axios.post(
           `${baseUrl}/llm/generate-code`,
-          { chatSessionId, prompt },
+          requestBody,
           { headers, responseType: 'stream' }
         );
         response.data.setEncoding('utf8');
