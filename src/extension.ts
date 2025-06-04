@@ -59,7 +59,8 @@ export function activate(context: vscode.ExtensionContext) {
       await new Promise((r) => setTimeout(r, 50));
 
       // 사용자 프롬프트 전송 (securityPrompt 타입)
-      const prompt = `Refactor the following code to be more secure:\n\n${code}`;
+      // const prompt = `Refactor the following code to be more secure:\n\n${code}`;
+      const prompt = `\n\n${code}`;
       provider.sendSecurityPrompt(prompt, sessionTitle);
     })
   );
