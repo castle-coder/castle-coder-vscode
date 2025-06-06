@@ -11,7 +11,7 @@ export function renderLoginView() {
       <input id="login-password" type="password" placeholder="Password" />
       <div class="form-buttons">
         <button id="login-btn">Login</button>
-        <button id="register-btn">Register</button>
+        <button id="register-btn">Sign up</button>
       </div>
     </div>
   `;

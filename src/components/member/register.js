@@ -28,7 +28,7 @@ export function renderRegisterView() {
       <input id="reg-phone" type="tel" placeholder="Phone Number" />
 
       <div class="form-buttons">
-        <button id="btn-register">Register</button>
+        <button id="btn-register">sign up</button>
         <button id="btn-back">Back</button>
       </div>
     </div>

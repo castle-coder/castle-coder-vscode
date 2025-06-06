@@ -46,6 +46,22 @@ function updateBotMessage(text) {
   chatbox.scrollTop = chatbox.scrollHeight;
 }
 
+// Send 버튼 활성/비활성 함수 추가
+function setSendButtonEnabled(enabled) {
+  const btn = document.getElementById('send-btn');
+  if (!btn) return;
+  btn.disabled = !enabled;
+  if (enabled) {
+    btn.style.backgroundColor = '#22c55e'; // 원래 색상(초록)
+    btn.style.cursor = 'pointer';
+    btn.style.opacity = '1';
+  } else {
+    btn.style.backgroundColor = '#888'; // 회색
+    btn.style.cursor = 'not-allowed';
+    btn.style.opacity = '0.7';
+  }
+}
+
 export function renderChatView(chatDataOrMessage) {
   console.log('[Debug] renderChatView called', chatDataOrMessage);
   const startApp  = document.getElementById('chat-start-app');
@@ -103,22 +119,19 @@ export function renderChatView(chatDataOrMessage) {
       addMessage('Bot', '이 채팅 세션에는 메시지가 없습니다.');
     } else {
       chatDataOrMessage.messages.forEach(msg => {
-        const chatbox = document.getElementById('chatbox');
-        const lastBotMsg = chatbox && chatbox.querySelector('.chat-message.bot:last-child');
-        const lastText = lastBotMsg ? lastBotMsg.textContent.trim() : null;
-        const newText = (msg.text || '').trim();
-        if (msg.sender === 'Bot' && lastText && lastText === newText) {
+
+        if (msg.sender === 'Bot') {
           // 중복 Bot 메시지면 추가하지 않음
           return;
         }
         addMessage(msg.sender || 'Bot', msg.text);
-        // 그냥 이 부분 없앨까?
+        console.log('answer 4');
       });
     }
     return;
   }
 
-  if (chatDataOrMessage) {
+  if (typeof chatDataOrMessage === 'string' && chatDataOrMessage.trim() !== '') {
     addMessage('You', chatDataOrMessage);
   }
 
@@ -190,6 +203,9 @@ export function renderChatView(chatDataOrMessage) {
       console.log('[Debug] Send button clicked:', msg);
       if (!msg) return;
       const imageUrls = attachedImages.map(img => img.imageUrl);
+      // 질문을 보낼 때 바로 내 메시지를 추가
+      addMessage('You', msg);
+      setSendButtonEnabled(false); // 추가: 전송 시 비활성화
       handleSendMessage(msg, imageUrls);
       ta.value = '';
       autoResize(ta);
@@ -220,9 +236,10 @@ if (!window.__castleCoder_message_listener_registered) {
         updateBotMessage(llmBotBuffer);
       }
       if (data.type === 'end') {
-        console.log('[Debug] End message received. Final buffer:', llmBotBuffer);
-        // addMessage('Bot', llmBotBuffer);
+        if (llmBotBuffer.trim() !== '') {
+        }
         llmBotBuffer = '';
+        setSendButtonEnabled(true); // 추가: 응답 완료 시 활성화
       }
       return;
     }
