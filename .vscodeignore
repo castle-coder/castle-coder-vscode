@@ -1,6 +1,12 @@
 .vscode/**
 .vscode-test/**
 src/**
+!src/**/*.css
+!src/**/*.html
+!src/**/*.js
+!src/**/*.png
+!src/**/*.jpg
+!src/**/*.svg
 .gitignore
 .yarnrc
 vsc-extension-quickstart.md

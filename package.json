@@ -1,7 +1,8 @@
 {
   "name": "castle-coder",
   "displayName": "Castle Coder",
-  "version": "0.0.1",
+  "icon": "castle.png",
+  "version": "0.0.4",
   "publisher": "YUCHANOH",
   "description": "",
   "engines": {
