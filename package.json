@@ -2,10 +2,10 @@
   "name": "castle-coder",
   "displayName": "Castle Coder",
   "version": "0.0.1",
-  "publisher": "O_u.chan",
+  "publisher": "YUCHANOH",
   "description": "",
   "engines": {
-    "vscode": "^1.60.0"
+    "vscode": "^1.99.0"
   },
   "activationEvents": [
     "onView:castleCoder.openview",
