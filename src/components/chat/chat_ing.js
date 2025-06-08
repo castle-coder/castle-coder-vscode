@@ -4,7 +4,7 @@ import { renderSessionList, renderSessionListOverlay } from '../chat/session/cha
 import { getSession } from '../chat/session/sessionState.js';
 import { uploadImage } from './imageUrl/imageUpload.js';
 import { deleteImage } from './imageUrl/imageDelete.js';
-import { getChatSessionId, handleSendMessage } from './chat_logic.js';
+import { getChatSessionId, handleSendMessage, setChatSessionId } from './chat_logic.js';
 
 // textarea 자동 높이 조절
 function autoResize(textarea) {
@@ -219,6 +219,11 @@ export function renderChatView(chatDataOrMessage) {
     setSendButtonEnabled(true, true);
   }
 
+  // chatSessionId 설정
+  if (chatDataOrMessage && chatDataOrMessage.chatSessionId) {
+    setChatSessionId(chatDataOrMessage.chatSessionId);
+  }
+
   // 입력창 세팅
   if (ta) {
     ta.style.overflow = 'hidden';
@@ -315,6 +320,8 @@ let llmBotBuffer = '';
 if (!window.__castleCoder_message_listener_registered) {
   window.addEventListener('message', ev => {
     if (ev.data.type === 'newChat') {
+      // 새로운 채팅 시작 시 버퍼 초기화
+      llmBotBuffer = '';
       renderStartView();
       // 시작 버튼을 Cancel 버튼으로 변경
       const startBtn = document.querySelector('.start-btn');
@@ -341,6 +348,14 @@ if (!window.__castleCoder_message_listener_registered) {
       console.log('[Debug] llm-chat-response:', data);
 
       if (data.type === 'token' && data.content !== undefined) {
+        // 새로운 토큰이 시작될 때 이전 응답 제거
+        if (llmBotBuffer === '') {
+          const lastBotMessage = document.querySelector('.chat-message.bot:last-child');
+          if (lastBotMessage) {
+            lastBotMessage.remove();
+          }
+        }
+        
         llmBotBuffer += data.content;
         console.log('[Debug] Token received:', data.content, '| Current buffer:', llmBotBuffer);
         updateBotMessage(llmBotBuffer);
@@ -350,9 +365,9 @@ if (!window.__castleCoder_message_listener_registered) {
           stopLoadingAnimation();
         }
         llmBotBuffer = '';
-        setSendButtonEnabled(true, false); // Send 버튼으로 변경
+        // end 타입이 오면 무조건 Send 버튼으로 변경
+        setSendButtonEnabled(true, false);
       }
-      return;
     }
     if (ev.data.type === 'llm-chat-error') {
       console.log('[Debug] llm-chat-error:', ev.data.error);
@@ -367,6 +382,9 @@ if (!window.__castleCoder_message_listener_registered) {
         chatbox.appendChild(el);
         chatbox.scrollTop = chatbox.scrollHeight;
       }
+    }
+    if (ev.data.type === 'update-button-state') {
+      setSendButtonEnabled(true, ev.data.data.isEndButton);
     }
   });
   window.__castleCoder_message_listener_registered = true;

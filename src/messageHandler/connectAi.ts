@@ -47,6 +47,11 @@ export class LLMMessageHandler {
                     this.view.webview.postMessage({ type: 'llm-chat-response', data: msg });
                     if (msg.type === 'end') {
                       response.data.destroy();
+                      // end 타입일 때 버튼 상태 변경 메시지 추가
+                      this.view.webview.postMessage({ 
+                        type: 'update-button-state',
+                        data: { isEndButton: false }
+                      });
                     }
                   }
                 } else {
