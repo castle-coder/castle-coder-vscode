@@ -86,9 +86,10 @@ export function activate(context: vscode.ExtensionContext) {
       console.log('[CastleCoder] Security Refactor command executed');
       vscode.window.showInformationMessage(`[CastleCoder] Security Refactor 명령 실행: ${sessionTitle}`);
 
-      // 사이드바 활성화
+      // 사이드바 활성화 및 포커스
       await vscode.commands.executeCommand('castleCoder.openview');
-      await new Promise((r) => setTimeout(r, 50));
+      // 사이드바가 열릴 때까지 잠시 대기
+      await new Promise((r) => setTimeout(r, 100));
 
       // 선택된 코드만 전송
       const prompt = `\n\n${code}`;

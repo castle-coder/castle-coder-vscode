@@ -31,6 +31,9 @@ export class SecurityRefactoringHandler {
         );
         console.log('[CastleCoder] Chat session title updated:', message.sessionTitle);
         
+        // CastleCoder 뷰를 보이게 설정
+        this.webview.show(true);
+        
         // 세션 생성 후 뷰 업데이트
         this.webview.webview.postMessage({
           type: 'sessionCreated',
@@ -43,6 +46,12 @@ export class SecurityRefactoringHandler {
           type: 'showChatView',
           chatSessionId,
           sessionTitle: message.sessionTitle || 'Security Refactoring'
+        });
+        
+        // 사용자 입력을 채팅 메시지로 표시
+        this.webview.webview.postMessage({
+          type: 'userPrompt',
+          prompt: message.prompt
         });
         
         console.log('[CastleCoder] sessionCreated message sent:', { chatSessionId, sessionTitle: message.sessionTitle });
@@ -76,9 +85,11 @@ export class SecurityRefactoringHandler {
                   const jsonStr = line.replace(/^data:/, '').trim();
                   if (jsonStr) {
                     const msg = JSON.parse(jsonStr);
-                    this.webview.webview.postMessage({ type: 'securityResponse', data: msg });
                     if (msg.type === 'end') {
+                      this.webview.webview.postMessage({ type: 'llm-chat-end', data: msg });
                       response.data.destroy();
+                    } else {
+                      this.webview.webview.postMessage({ type: 'llm-chat-response', data: msg });
                     }
                   }
                 }
@@ -94,7 +105,7 @@ export class SecurityRefactoringHandler {
       } catch (error: any) {
         console.error('[CastleCoder] Error in securityRefactoring handler:', error);
         this.webview.webview.postMessage({
-          type: 'securityError',
+          type: 'llm-chat-error',
           error: error.message
         });
       }

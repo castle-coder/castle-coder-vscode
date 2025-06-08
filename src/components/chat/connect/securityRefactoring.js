@@ -2,6 +2,7 @@
 import { handleStartChat } from '../chat_logic.js';
 import { vscode } from '../../api/vscodeApi.js';
 import { renderChatView } from '../chat_ing.js';
+import { marked } from 'https://cdn.jsdelivr.net/npm/marked@4.3.0/lib/marked.esm.js';
 
 export class SecurityRefactoring {
   constructor() {
@@ -19,8 +20,9 @@ export class SecurityRefactoring {
           prompt: message.prompt,
           sessionTitle: message.sessionTitle
         });
-        // 기존 디버깅 및 UI 로직도 유지
-        await this.handleSecurityPrompt(message.prompt);
+        
+        // 채팅과 동일한 방식으로 처리
+        await handleStartChat(message.prompt);
       } else if (message.type === 'securityResponse') {
         this.handleSecurityResponse(message.data);
       } else if (message.type === 'securityError') {
@@ -35,10 +37,6 @@ export class SecurityRefactoring {
         });
       }
     });
-  }
-
-  async handleSecurityPrompt(prompt) {
-    handleStartChat(prompt);
   }
 
   handleSecurityResponse(response) {
@@ -61,13 +59,14 @@ export class SecurityRefactoring {
       botMsg.id = 'castle-coder-bot-msg';
       botMsg.className = 'chat-message bot';
       botMsg.innerHTML = `
-        <div class=\"sender\">Bot</div>
-        <div class=\"text\"></div>
+        <div class="sender">Castle Coder</div>
+        <div class="text markdown-body"></div>
       `;
       document.getElementById('chatbox').appendChild(botMsg);
     }
-    botMsg.querySelector('.text').textContent = content;
-    botMsg.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    // 스트리밍 중에도 마크다운 파싱 적용
+    botMsg.querySelector('.text').innerHTML = marked.parse(content);
+    chatbox.scrollTop = chatbox.scrollHeight;
   }
 
   handleSecurityError(error) {
@@ -76,8 +75,8 @@ export class SecurityRefactoring {
       const el = document.createElement('div');
       el.className = 'chat-message bot';
       el.innerHTML = `
-        <div class=\"sender\">Bot</div>
-        <div class=\"text\">[Error] ${error}</div>
+        <div class="sender">Bot</div>
+        <div class="text">[Error] ${error}</div>
       `;
       chatbox.appendChild(el);
       chatbox.scrollTop = chatbox.scrollHeight;
