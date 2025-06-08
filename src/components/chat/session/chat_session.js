@@ -3,6 +3,7 @@ import { requestChatSessionList } from './sessionApi.js';
 import { loadChatSession } from './sessionLoad.js';
 import { renderChatView } from '../chat_ing.js';
 import { setSession } from './sessionState.js';
+import { setChatSessionId } from '../chat_logic.js';
 
 export async function renderSessionList() {
   const listDiv = document.getElementById('session-list');
@@ -47,9 +48,9 @@ export async function renderSessionList() {
         const id = btn.getAttribute('data-id');
         const title = btn.getAttribute('data-title') || '';
         try {
-          const chatData = await loadChatSession(Number(id));
-
           setSession(Number(id), title);
+          setChatSessionId(Number(id));
+          const chatData = await loadChatSession(Number(id));
           renderChatView(chatData);
         } catch (error) {
           console.error('Error loading chat session:', error);
