@@ -10,7 +10,13 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
       CastleCoderSidebarViewProvider.viewType,
-      provider
+      provider,
+      {
+        // 이 옵션을 추가!
+        webviewOptions: {
+          retainContextWhenHidden: true
+        }
+      }
     )
   );
 
