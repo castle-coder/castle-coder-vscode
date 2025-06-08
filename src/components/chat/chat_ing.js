@@ -202,25 +202,50 @@ export function renderChatView(chatDataOrMessage) {
       }
       .markdown-body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-        font-size: 16px;
-        line-height: 1.5;
+        font-size: 15px;
+        line-height: 1.6;
         word-wrap: break-word;
+        color: #e4e4e7;
       }
+      .markdown-body h1,
+      .markdown-body h2,
+      .markdown-body h3,
+      .markdown-body h4,
+      .markdown-body h5,
+      .markdown-body h6 {
+        margin-top: 24px;
+        margin-bottom: 16px;
+        font-weight: 600;
+        line-height: 1.25;
+        color: #f4f4f5;
+      }
+      .markdown-body h1 { font-size: 2em; border-bottom: 1px solid #3f3f46; padding-bottom: 0.3em; }
+      .markdown-body h2 { font-size: 1.5em; border-bottom: 1px solid #3f3f46; padding-bottom: 0.3em; }
+      .markdown-body h3 { font-size: 1.25em; }
+      .markdown-body h4 { font-size: 1em; }
+      .markdown-body h5 { font-size: 0.875em; }
+      .markdown-body h6 { font-size: 0.85em; color: #a1a1aa; }
+      
       .markdown-body code {
-        background-color: rgba(27,31,35,0.05);
-        border-radius: 3px;
+        background-color: rgba(63, 63, 70, 0.4);
+        border-radius: 4px;
         font-size: 85%;
         margin: 0;
         padding: 0.2em 0.4em;
+        font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
       }
+      
       .markdown-body pre {
-        background-color: #1e1e1e;
-        border-radius: 3px;
+        background-color: #18181b;
+        border-radius: 6px;
         font-size: 85%;
         line-height: 1.45;
         overflow: auto;
         padding: 16px;
+        margin: 16px 0;
+        border: 1px solid #3f3f46;
       }
+      
       .markdown-body pre code {
         background-color: transparent;
         border: 0;
@@ -230,23 +255,91 @@ export function renderChatView(chatDataOrMessage) {
         overflow: visible;
         padding: 0;
         word-wrap: normal;
+        color: #e4e4e7;
       }
+      
+      .markdown-body blockquote {
+        margin: 0 0 16px;
+        padding: 0 1em;
+        color: #a1a1aa;
+        border-left: 0.25em solid #3f3f46;
+      }
+      
+      .markdown-body ul,
+      .markdown-body ol {
+        padding-left: 2em;
+        margin-top: 0;
+        margin-bottom: 16px;
+      }
+      
+      .markdown-body li {
+        margin: 0.25em 0;
+      }
+      
       .markdown-body table {
         border-collapse: collapse;
         border-spacing: 0;
         margin: 16px 0;
+        width: 100%;
+        overflow: auto;
       }
+      
+      .markdown-body table th {
+        font-weight: 600;
+        background-color: #27272a;
+      }
+      
       .markdown-body table th,
       .markdown-body table td {
-        border: 1px solid #dfe2e5;
-        padding: 6px 13px;
+        border: 1px solid #3f3f46;
+        padding: 8px 12px;
       }
+      
       .markdown-body table tr {
-        background-color: #fff;
-        border-top: 1px solid #c6cbd1;
+        background-color: #18181b;
+        border-top: 1px solid #3f3f46;
       }
+      
       .markdown-body table tr:nth-child(2n) {
-        background-color: #f6f8fa;
+        background-color: #27272a;
+      }
+      
+      .markdown-body hr {
+        height: 0.25em;
+        padding: 0;
+        margin: 24px 0;
+        background-color: #3f3f46;
+        border: 0;
+      }
+      
+      .markdown-body a {
+        color: #60a5fa;
+        text-decoration: none;
+      }
+      
+      .markdown-body a:hover {
+        text-decoration: underline;
+      }
+      
+      .markdown-body img {
+        max-width: 100%;
+        box-sizing: border-box;
+        border-radius: 4px;
+      }
+      
+      .markdown-body p {
+        margin-top: 0;
+        margin-bottom: 16px;
+      }
+      
+      .markdown-body strong {
+        font-weight: 600;
+        color: #f4f4f5;
+      }
+      
+      .markdown-body em {
+        font-style: italic;
+        color: #d4d4d8;
       }
     </style>
   `;
