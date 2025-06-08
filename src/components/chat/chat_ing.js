@@ -7,6 +7,7 @@ import { deleteImage } from './imageUrl/imageDelete.js';
 import { getChatSessionId, handleSendMessage, setChatSessionId } from './chat_logic.js';
 import { loadChatSession } from '../chat/session/sessionLoad.js';
 import { cancelResponse as cancelLLMResponse } from './connect/codeGenerate.js';
+import { marked } from 'https://cdn.jsdelivr.net/npm/marked@4.3.0/lib/marked.esm.js';
 
 // textarea 자동 높이 조절
 function autoResize(textarea) {
@@ -22,9 +23,13 @@ function addMessage(sender, text) {
   const safeText = typeof text === 'string' ? text : '';
   const el = document.createElement('div');
   el.className = `chat-message ${sender==='You'?'user':'bot'}`;
+  
+  // 봇 메시지인 경우 마크다운 파싱
+  const formattedText = sender === 'Bot' ? marked.parse(safeText) : safeText.replace(/\n/g,'<br>');
+  
   el.innerHTML = `
     <div class="sender">${sender === 'Bot' ? 'Castle Coder' : sender}</div>
-    <div class="text">${safeText.replace(/\n/g,'<br>')}</div>
+    <div class="text markdown-body">${formattedText}</div>
   `;
   chatbox.appendChild(el);
   chatbox.scrollTop = chatbox.scrollHeight;
@@ -48,7 +53,7 @@ function updateBotMessage(text) {
   }
   lastBotMsg.innerHTML = `
     <div class="sender">Castle Coder</div>
-    <div class="text">${text.replace(/\n/g, '<br>')}</div>
+    <div class="text markdown-body">${marked.parse(text)}</div>
   `;
   chatbox.scrollTop = chatbox.scrollHeight;
 }
@@ -194,6 +199,54 @@ export function renderChatView(chatDataOrMessage) {
       .sharp-btn.disabled-btn {
         background-color: #888;
         border-color: #888;
+      }
+      .markdown-body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        font-size: 16px;
+        line-height: 1.5;
+        word-wrap: break-word;
+      }
+      .markdown-body code {
+        background-color: rgba(27,31,35,0.05);
+        border-radius: 3px;
+        font-size: 85%;
+        margin: 0;
+        padding: 0.2em 0.4em;
+      }
+      .markdown-body pre {
+        background-color: #1e1e1e;
+        border-radius: 3px;
+        font-size: 85%;
+        line-height: 1.45;
+        overflow: auto;
+        padding: 16px;
+      }
+      .markdown-body pre code {
+        background-color: transparent;
+        border: 0;
+        display: inline;
+        line-height: inherit;
+        margin: 0;
+        overflow: visible;
+        padding: 0;
+        word-wrap: normal;
+      }
+      .markdown-body table {
+        border-collapse: collapse;
+        border-spacing: 0;
+        margin: 16px 0;
+      }
+      .markdown-body table th,
+      .markdown-body table td {
+        border: 1px solid #dfe2e5;
+        padding: 6px 13px;
+      }
+      .markdown-body table tr {
+        background-color: #fff;
+        border-top: 1px solid #c6cbd1;
+      }
+      .markdown-body table tr:nth-child(2n) {
+        background-color: #f6f8fa;
       }
     </style>
   `;
