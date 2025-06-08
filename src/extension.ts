@@ -69,10 +69,12 @@ export function activate(context: vscode.ExtensionContext) {
         return;
       }
       
-      // 전체 파일 내용 가져오기
-      const code = editor.document.getText();
+      // 선택된 텍스트 가져오기
+      const selection = editor.selection;
+      const code = selection.isEmpty ? editor.document.getText() : editor.document.getText(selection);
+      
       if (!code) {
-        vscode.window.showWarningMessage('File is empty');
+        vscode.window.showWarningMessage('No code selected');
         return;
       }
 
@@ -88,8 +90,7 @@ export function activate(context: vscode.ExtensionContext) {
       await vscode.commands.executeCommand('castleCoder.openview');
       await new Promise((r) => setTimeout(r, 50));
 
-      // 사용자 프롬프트 전송 (securityPrompt 타입)
-      // const prompt = `Refactor the following code to be more secure:\n\n${code}`;
+      // 선택된 코드만 전송
       const prompt = `\n\n${code}`;
       provider.sendSecurityPrompt(prompt, sessionTitle);
     })

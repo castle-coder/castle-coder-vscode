@@ -1,6 +1,7 @@
 // securityRefactoring.js
 import { handleStartChat } from '../chat_logic.js';
 import { vscode } from '../../api/vscodeApi.js';
+import { renderChatView } from '../chat_ing.js';
 
 export class SecurityRefactoring {
   constructor() {
@@ -25,6 +26,13 @@ export class SecurityRefactoring {
       } else if (message.type === 'securityError') {
         console.error('[CastleCoder] Webview: handleSecurityError', message.error);
         this.handleSecurityError(message.error);
+      } else if (message.type === 'showChatView') {
+        // 채팅 뷰 표시
+        renderChatView({
+          chatSessionId: message.chatSessionId,
+          sessionTitle: message.sessionTitle,
+          messages: []
+        });
       }
     });
   }
