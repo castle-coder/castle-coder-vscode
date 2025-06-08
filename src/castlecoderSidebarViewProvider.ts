@@ -17,7 +17,10 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
   private _securityRefactoringHandler?: SecurityRefactoringHandler;
   private _imageManageHandler?: ImageManageHandler;
 
-  constructor(private readonly _extensionUri: vscode.Uri) {}
+  constructor(
+    private readonly _extensionUri: vscode.Uri,
+    private readonly _context: vscode.ExtensionContext
+  ) {}
 
   public resolveWebviewView(
     webviewView: vscode.WebviewView,
@@ -38,27 +41,30 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
 
     webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
 
-    webviewView.webview.onDidReceiveMessage(async (message: any) => {
-      if (
-        message.type === 'createChatSession' ||
-        message.type === 'updateChatSessionTitle' ||
-        message.type === 'getChatSessionList' ||
-        message.type === 'deleteChatSession' ||
-        message.type === 'loadChatSession'
-      ) {
-        await this._chatMessageHandler?.handleMessage(message);
-      } else if (message.type === 'llm-chat') {
-        await this._llmMessageHandler?.handleMessage(message);
-      } else if (message.type === 'securityPrompt') {
-        await this._securityRefactoringHandler?.handleMessage(message);
-      } else if (message.type === 'uploadImage') {
-        await this._imageManageHandler?.handleMessage(message);
-      } else if (message.type === 'deleteImage') {
-        await this._imageManageHandler?.handleMessage(message);
-      } else {
-        await this._messageHandler?.handleMessage(message);
-      }
-    });
+    // Webview가 재생성될 때 상태 복원
+    this._restoreState(webviewView.webview);
+
+    this._setWebviewMessageListener(webviewView.webview);
+  }
+
+  private _restoreState(webview: vscode.Webview) {
+    // Extension Host에 저장된 상태를 가져와서 Webview에 전달
+    const auth = this._context.globalState.get('castleCoder_auth');
+    const session = this._context.globalState.get('castleCoder_session');
+    
+    if (auth) {
+      webview.postMessage({ 
+        type: 'restoreAuthState', 
+        data: auth 
+      });
+    }
+    
+    if (session) {
+      webview.postMessage({ 
+        type: 'restoreSessionState', 
+        data: session 
+      });
+    }
   }
 
   public sendNewChat() {
@@ -156,5 +162,41 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
       text += possible.charAt(Math.floor(Math.random() * possible.length));
     }
     return text;
+  }
+
+  private _setWebviewMessageListener(webview: vscode.Webview) {
+    webview.onDidReceiveMessage(async (msg) => {
+      if (
+        msg.type === 'createChatSession' ||
+        msg.type === 'updateChatSessionTitle' ||
+        msg.type === 'getChatSessionList' ||
+        msg.type === 'deleteChatSession' ||
+        msg.type === 'loadChatSession'
+      ) {
+        await this._chatMessageHandler?.handleMessage(msg);
+      } else if (msg.type === 'llm-chat') {
+        await this._llmMessageHandler?.handleMessage(msg);
+      } else if (msg.type === 'securityPrompt') {
+        await this._securityRefactoringHandler?.handleMessage(msg);
+      } else if (msg.type === 'uploadImage') {
+        await this._imageManageHandler?.handleMessage(msg);
+      } else if (msg.type === 'deleteImage') {
+        await this._imageManageHandler?.handleMessage(msg);
+      } else if (msg.type === 'getAuth') {
+        const auth = this._context.globalState.get('castleCoder_auth');
+        console.log('[CastleCoder][ExtensionHost] getAuth:', auth);
+        webview.postMessage({ type: 'authInfo', data: auth });
+      } else if (msg.type === 'saveAuth' && msg.data) {
+        console.log('[CastleCoder][ExtensionHost] saveAuth:', msg.data);
+        await this._context.globalState.update('castleCoder_auth', msg.data);
+      } else if (msg.type === 'saveSession' && msg.data) {
+        await this._context.globalState.update('castleCoder_session', msg.data);
+      } else if (msg.type === 'logout') {
+        await this._context.globalState.update('castleCoder_auth', undefined);
+        await this._context.globalState.update('castleCoder_session', undefined);
+      } else {
+        await this._messageHandler?.handleMessage(msg);
+      }
+    });
   }
 }

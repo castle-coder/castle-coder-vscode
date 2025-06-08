@@ -4,7 +4,7 @@ import { CastleCoderSidebarViewProvider } from './castlecoderSidebarViewProvider
 export function activate(context: vscode.ExtensionContext) {
   console.log('🟢 Castle Coder activated');
 
-  const provider = new CastleCoderSidebarViewProvider(context.extensionUri);
+  const provider = new CastleCoderSidebarViewProvider(context.extensionUri, context);
 
   // 1) 사이드바 뷰 프로바이더 등록
   context.subscriptions.push(
