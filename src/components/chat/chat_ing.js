@@ -6,6 +6,7 @@ import { uploadImage } from './imageUrl/imageUpload.js';
 import { deleteImage } from './imageUrl/imageDelete.js';
 import { getChatSessionId, handleSendMessage, setChatSessionId } from './chat_logic.js';
 import { loadChatSession } from '../chat/session/sessionLoad.js';
+import { cancelResponse as cancelLLMResponse } from './connect/codeGenerate.js';
 
 // textarea 자동 높이 조절
 function autoResize(textarea) {
@@ -213,13 +214,18 @@ export function renderChatView(chatDataOrMessage) {
   // 세션 로드 시 messages 배열 처리
   if (chatDataOrMessage && Array.isArray(chatDataOrMessage.messages)) {
     if (chatDataOrMessage.messages.length === 0) {
-      addMessage('Bot', 'Generate...');
-      startLoadingAnimation();
-      setSendButtonEnabled(true, true);
+      addMessage('Bot', 'No messages yet. Start a new conversation!');
+      setSendButtonEnabled(true, false);
     } else {
+      // 메시지를 원래 순서대로 출력
       chatDataOrMessage.messages.forEach(msg => {
+        console.log('[ChatLog]', msg.createdAt, msg);
         addMessage(msg.sender || 'Bot', msg.text);
       });
+      // 메시지 로드 후 스크롤을 맨 아래로 이동
+      if (chatbox) {
+        chatbox.scrollTop = chatbox.scrollHeight;
+      }
     }
   } else if (typeof chatDataOrMessage === 'string' && chatDataOrMessage.trim() !== '') {
     addMessage('You', chatDataOrMessage);
@@ -356,6 +362,18 @@ if (!window.__castleCoder_message_listener_registered) {
       const data = ev.data.data;
       console.log('[Debug] llm-chat-response:', data);
 
+      // 취소된 경우 취소 메시지로 변경하고 더 이상의 토큰 처리 중단
+      if (data.cancelled) {
+        const lastBotMessage = document.querySelector('.chat-message.bot:last-child');
+        if (lastBotMessage) {
+          lastBotMessage.innerHTML = `
+            <div class="sender">Castle Coder</div>
+            <div class="text">응답이 취소되었습니다.</div>
+          `;
+        }
+        return;
+      }
+
       if (data.type === 'token' && data.content !== undefined) {
         // 새로운 토큰이 시작될 때 이전 응답 제거
         if (llmBotBuffer === '') {
@@ -373,21 +391,29 @@ if (!window.__castleCoder_message_listener_registered) {
     if (ev.data.type === 'llm-chat-end') {
       console.log('llmbotbuffer:',llmBotBuffer);
       const data = ev.data.data;
-      // 세션 log(메시지) 갱신
-      const sessionId = getChatSessionId && getChatSessionId();
-      if (sessionId) {
-        loadChatSession(sessionId).then(chatData => {
-          renderChatView(chatData);
-        });
+      
+      // 취소된 경우 취소 메시지로 변경
+      if (data.cancelled) {
+        const lastBotMessage = document.querySelector('.chat-message.bot:last-child');
+        if (lastBotMessage) {
+          lastBotMessage.innerHTML = `
+            <div class="sender">Castle Coder</div>
+            <div class="text">응답이 취소되었습니다.</div>
+          `;
+        }
+      } else {
+        // 세션 log(메시지) 갱신
+        const sessionId = getChatSessionId && getChatSessionId();
+        if (sessionId) {
+          loadChatSession(sessionId).then(chatData => {
+            renderChatView(chatData);
+          });
+        }
       }
+      
       llmBotBuffer = '';
       if (llmBotBuffer.trim() !== '') {
         stopLoadingAnimation();
-      }
-      // 마지막 봇 메시지 제거
-      const lastBotMessage = document.querySelector('.chat-message.bot:last-child');
-      if (lastBotMessage) {
-        lastBotMessage.remove();
       }
     }
     if (ev.data.type === 'llm-chat-error') {
@@ -406,6 +432,36 @@ if (!window.__castleCoder_message_listener_registered) {
     }
     if (ev.data.type === 'update-button-state') {
       setSendButtonEnabled(true, ev.data.data.isEndButton);
+    }
+    if (ev.data.type === 'llm-cancel-response') {
+      console.log('[Debug] Cancel response:', ev.data.data);
+      // 취소 성공 시 현재 메시지를 취소 메시지로 변경
+      const lastBotMessage = document.querySelector('.chat-message.bot:last-child');
+      if (lastBotMessage) {
+        lastBotMessage.innerHTML = `
+          <div class="sender">Castle Coder</div>
+          <div class="text">cancelled.</div>
+        `;
+      }
+      // 버퍼 초기화
+      llmBotBuffer = '';
+      // 애니메이션 중지
+      stopLoadingAnimation();
+      // Send 버튼으로 변경
+      setSendButtonEnabled(true, false);
+    }
+    if (ev.data.type === 'llm-cancel-error') {
+      console.error('[Debug] Cancel error:', ev.data.error);
+      // 취소 실패 시 에러 메시지 표시
+      const lastBotMessage = document.querySelector('.chat-message.bot:last-child');
+      if (lastBotMessage) {
+        lastBotMessage.innerHTML = `
+          <div class="sender">Castle Coder</div>
+          <div class="text">[Error] 취소 요청 실패: ${ev.data.error}</div>
+        `;
+      }
+      // Send 버튼으로 변경
+      setSendButtonEnabled(true, false);
     }
   });
   window.__castleCoder_message_listener_registered = true;
@@ -433,10 +489,7 @@ function cancelResponse() {
   stopLoadingAnimation();
   
   // 취소 API 호출
-  vscode.postMessage({
-    type: 'llm-cancel',
-    chatSessionId: chatSessionId
-  });
+  cancelLLMResponse(chatSessionId);
   
   // 취소 메시지 추가
   addMessage('Bot', '응답이 취소되었습니다.');

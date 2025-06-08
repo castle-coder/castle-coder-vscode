@@ -11,6 +11,8 @@ export async function renderSessionList() {
   listDiv.innerHTML = '<div>Loading...</div>';
   try {
     const sessions = await requestChatSessionList();
+    // 세션 id 기준 오름차순 정렬
+    sessions.sort((a, b) => a.id - b.id);
     if (!sessions.length) {
       listDiv.innerHTML = '<div style="color:#888;">No previous chats.</div>';
       return;
@@ -60,7 +62,8 @@ export async function renderSessionList() {
 
     // DEL 버튼에만 삭제 기능 부여 (UI에서만 삭제)
     attachDeleteHandlers(listDiv, (id) => {
-      const div = listDiv.querySelector(`.del-session-btn[data-id="${id}"]`).parentElement;
+      const btn = listDiv.querySelector(`.del-session-btn[data-id="${id}"]`);
+      const div = btn ? btn.parentElement : null;
       if (div) div.remove();
     });
   } catch (e) {
