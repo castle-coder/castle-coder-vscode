@@ -21,11 +21,16 @@ function addMessage(sender, text) {
   const el = document.createElement('div');
   el.className = `chat-message ${sender==='You'?'user':'bot'}`;
   el.innerHTML = `
-    <div class="sender">${sender}</div>
+    <div class="sender">${sender === 'Bot' ? 'Castle Coder' : sender}</div>
     <div class="text">${safeText.replace(/\n/g,'<br>')}</div>
   `;
   chatbox.appendChild(el);
   chatbox.scrollTop = chatbox.scrollHeight;
+  
+  // 봇의 로딩 메시지인 경우 애니메이션 시작
+  if (sender === 'Bot' && text === 'Generate...') {
+    startLoadingAnimation();
+  }
 }
 
 // 실시간으로 봇 메시지를 업데이트(마지막 메시지 덮어쓰기)
@@ -40,7 +45,7 @@ function updateBotMessage(text) {
     chatbox.appendChild(lastBotMsg);
   }
   lastBotMsg.innerHTML = `
-    <div class="sender">Bot</div>
+    <div class="sender">Castle Coder</div>
     <div class="text">${text.replace(/\n/g, '<br>')}</div>
   `;
   chatbox.scrollTop = chatbox.scrollHeight;
@@ -60,6 +65,29 @@ function setSendButtonEnabled(enabled) {
     btn.style.cursor = 'not-allowed';
     btn.style.opacity = '0.7';
   }
+}
+
+// 로딩 애니메이션을 위한 전역 변수
+let loadingAnimationInterval = null;
+
+// 로딩 애니메이션 함수
+function startLoadingAnimation() {
+  let dots = 0;
+  const maxDots = 3;
+  
+  // 기존 인터벌이 있다면 제거
+  if (loadingAnimationInterval) {
+    clearInterval(loadingAnimationInterval);
+  }
+  
+  loadingAnimationInterval = setInterval(() => {
+    dots = (dots + 1) % (maxDots + 1);
+    const loadingText = 'Generate' + '.'.repeat(dots);
+    const loadingMessage = document.querySelector('.chat-message.bot:last-child .text');
+    if (loadingMessage && loadingMessage.textContent.startsWith('Generate')) {
+      loadingMessage.textContent = loadingText;
+    }
+  }, 500);
 }
 
 export function renderChatView(chatDataOrMessage) {
@@ -116,16 +144,15 @@ export function renderChatView(chatDataOrMessage) {
   // 세션 로드 시 messages 배열 처리
   if (chatDataOrMessage && Array.isArray(chatDataOrMessage.messages)) {
     if (chatDataOrMessage.messages.length === 0) {
-      addMessage('Bot', '이 채팅 세션에는 메시지가 없습니다.');
+      addMessage('Bot', 'Generate...');
+      startLoadingAnimation(); // 빈 세션일 때도 애니메이션 시작
     } else {
       chatDataOrMessage.messages.forEach(msg => {
-
         if (msg.sender === 'Bot') {
           // 중복 Bot 메시지면 추가하지 않음
           return;
         }
         addMessage(msg.sender || 'Bot', msg.text);
-        console.log('answer 4');
       });
     }
     return;
@@ -133,6 +160,8 @@ export function renderChatView(chatDataOrMessage) {
 
   if (typeof chatDataOrMessage === 'string' && chatDataOrMessage.trim() !== '') {
     addMessage('You', chatDataOrMessage);
+    addMessage('Bot', 'Generate...');
+    startLoadingAnimation(); // 새 메시지 전송 시 애니메이션 시작
   }
 
   // 입력창 세팅
@@ -201,11 +230,21 @@ export function renderChatView(chatDataOrMessage) {
     btn.addEventListener('click', async () => {
       const msg = ta.value.trim();
       console.log('[Debug] Send button clicked:', msg);
+      
+      // Cancel 버튼인 경우 취소 처리
+      if (btn.textContent === 'Cancel') {
+        console.log('[Debug] Cancel button clicked');
+        cancelResponse();
+        return;
+      }
+      
       if (!msg) return;
       const imageUrls = attachedImages.map(img => img.imageUrl);
       // 질문을 보낼 때 바로 내 메시지를 추가
       addMessage('You', msg);
-      setSendButtonEnabled(false); // 추가: 전송 시 비활성화
+      addMessage('Bot', 'Generate...');
+
+      setSendButtonEnabled(true, true); // Cancel 버튼으로 변경
       handleSendMessage(msg, imageUrls);
       ta.value = '';
       autoResize(ta);
@@ -259,4 +298,35 @@ if (!window.__castleCoder_message_listener_registered) {
     }
   });
   window.__castleCoder_message_listener_registered = true;
+}
+
+// 응답 취소 함수
+function cancelResponse() {
+  const chatSessionId = getChatSessionId();
+  
+  if (!chatSessionId) {
+    console.error('[Debug] No chatSessionId found');
+    return;
+  }
+  
+  // 즉시 Send 버튼으로 변경
+  setSendButtonEnabled(true, false);
+  
+  // 로딩 메시지 제거
+  const loadingMessage = document.querySelector('.chat-message.bot:last-child');
+  if (loadingMessage && loadingMessage.textContent.includes('Generate')) {
+    loadingMessage.remove();
+  }
+  
+  // 애니메이션 중지
+  stopLoadingAnimation();
+  
+  // 취소 API 호출
+  vscode.postMessage({
+    type: 'llm-cancel',
+    chatSessionId: chatSessionId
+  });
+  
+  // 취소 메시지 추가
+  addMessage('Bot', '응답이 취소되었습니다.');
 }

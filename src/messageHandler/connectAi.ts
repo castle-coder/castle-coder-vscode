@@ -88,5 +88,34 @@ export class LLMMessageHandler {
         this.view.webview.postMessage({ type: 'llm-chat-error', error: errorMsg });
       }
     }
+    // llm-cancel 메시지 타입 추가
+    else if (message.type === 'llm-cancel') {
+      const { chatSessionId } = message;
+      try {
+        const headers = {
+          'Authorization': `Bearer ${getAccessToken()}`,
+          'Accept': '*/*'
+        };
+        const response = await axios.delete(
+          `${baseUrl}/llm/cancel/${chatSessionId}`,
+          { headers }
+        );
+        // 요청 취소 성공 시
+        this.view.webview.postMessage({
+          type: 'llm-cancel-response',
+          data: response.data
+        });
+      } catch (error: any) {
+        let errorMsg = error.message;
+        if (error.response && error.response.data && typeof error.response.data.message === 'string') {
+          errorMsg = error.response.data.message;
+        }
+        // 요청 취소 실패 시
+        this.view.webview.postMessage({
+          type: 'llm-cancel-error',
+          error: errorMsg
+        });
+      }
+    }
   }
 } 
