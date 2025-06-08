@@ -65,7 +65,7 @@
         },
         {
           "command": "castleCoder.newChat",
-          "when": "view == castleCoder.openview",
+          "when": "view == castleCoder.openview && castleCoder:isLoggedIn",
           "group": "navigation"
         }
       ],
