@@ -51,19 +51,57 @@ function updateBotMessage(text) {
   chatbox.scrollTop = chatbox.scrollHeight;
 }
 
-// Send 버튼 활성/비활성 함수 추가
-function setSendButtonEnabled(enabled) {
+// Send 버튼 활성/비활성 함수 수정
+function setSendButtonEnabled(enabled, isEndButton = false) {
   const btn = document.getElementById('send-btn');
   if (!btn) return;
+  
   btn.disabled = !enabled;
   if (enabled) {
-    btn.style.backgroundColor = '#22c55e'; // 원래 색상(초록)
-    btn.style.cursor = 'pointer';
-    btn.style.opacity = '1';
+    if (isEndButton) {
+      btn.textContent = 'Cancel';
+      btn.className = 'sharp-btn cancel-btn';
+      btn.style.cssText = `
+        background: #ef4444 !important;
+        background-image: none !important;
+        border-color: #ef4444 !important;
+        color: white !important;
+        padding: 8px 16px !important;
+        border-radius: 4px !important;
+        border: 1px solid !important;
+        font-weight: 500 !important;
+        cursor: pointer !important;
+        opacity: 1 !important;
+        box-shadow: none !important;
+      `;
+    } else {
+      btn.textContent = 'Send';
+      btn.className = 'sharp-btn';
+      btn.style.cssText = `
+        background-color: #22c55e !important;
+        border-color: #22c55e !important;
+        color: white !important;
+        padding: 8px 16px !important;
+        border-radius: 4px !important;
+        border: 1px solid !important;
+        font-weight: 500 !important;
+        cursor: pointer !important;
+        opacity: 1 !important;
+      `;
+    }
   } else {
-    btn.style.backgroundColor = '#888'; // 회색
-    btn.style.cursor = 'not-allowed';
-    btn.style.opacity = '0.7';
+    btn.className = 'sharp-btn disabled-btn';
+    btn.style.cssText = `
+      background-color: #888 !important;
+      border-color: #888 !important;
+      color: white !important;
+      padding: 8px 16px !important;
+      border-radius: 4px !important;
+      border: 1px solid !important;
+      font-weight: 500 !important;
+      cursor: not-allowed !important;
+      opacity: 0.7 !important;
+    `;
   }
 }
 
@@ -126,6 +164,28 @@ export function renderChatView(chatDataOrMessage) {
         </div>
       </div>
     </div>
+    <style>
+      .sharp-btn {
+        padding: 8px 16px;
+        border-radius: 4px;
+        border: 1px solid;
+        font-weight: 500;
+        transition: all 0.2s;
+        color: white;
+      }
+      .sharp-btn:not(.disabled-btn) {
+        background-color: #22c55e;
+        border-color: #22c55e;
+      }
+      .sharp-btn.cancel-btn {
+        background-color: #ef4444 !important;
+        border-color: #ef4444 !important;
+      }
+      .sharp-btn.disabled-btn {
+        background-color: #888;
+        border-color: #888;
+      }
+    </style>
   `;
 
   // 로그아웃 링크 이벤트 리스너 추가
@@ -146,6 +206,7 @@ export function renderChatView(chatDataOrMessage) {
     if (chatDataOrMessage.messages.length === 0) {
       addMessage('Bot', 'Generate...');
       startLoadingAnimation(); // 빈 세션일 때도 애니메이션 시작
+      setSendButtonEnabled(true, true); // Cancel 버튼으로 변경
     } else {
       chatDataOrMessage.messages.forEach(msg => {
         if (msg.sender === 'Bot') {
@@ -162,6 +223,7 @@ export function renderChatView(chatDataOrMessage) {
     addMessage('You', chatDataOrMessage);
     addMessage('Bot', 'Generate...');
     startLoadingAnimation(); // 새 메시지 전송 시 애니메이션 시작
+    setSendButtonEnabled(true, true); // Cancel 버튼으로 변경
   }
 
   // 입력창 세팅
@@ -261,6 +323,22 @@ if (!window.__castleCoder_message_listener_registered) {
   window.addEventListener('message', ev => {
     if (ev.data.type === 'newChat') {
       renderStartView();
+      // 시작 버튼을 Cancel 버튼으로 변경
+      const startBtn = document.querySelector('.start-btn');
+      if (startBtn) {
+        startBtn.textContent = 'Cancel';
+        startBtn.style.cssText = `
+          background-color: #ef4444;
+          border-color: #ef4444;
+          color: white;
+          padding: 8px 16px;
+          border-radius: 4px;
+          border: 1px solid;
+          font-weight: 500;
+          cursor: pointer;
+          opacity: 1;
+        `;
+      }
     }
     if (ev.data.type === 'showSessionList') {
       renderSessionListOverlay();
@@ -276,9 +354,10 @@ if (!window.__castleCoder_message_listener_registered) {
       }
       if (data.type === 'end') {
         if (llmBotBuffer.trim() !== '') {
+          stopLoadingAnimation();
         }
         llmBotBuffer = '';
-        setSendButtonEnabled(true); // 추가: 응답 완료 시 활성화
+        setSendButtonEnabled(true, false); // Send 버튼으로 변경
       }
       return;
     }
