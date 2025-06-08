@@ -32,8 +32,7 @@
           "type": "webview",
           "id": "castleCoder.openview",
           "name": "Castle Coder",
-          "contextualTitle": "Castle Coder",
-          "when": "castleCoder:isLoggedIn"
+          "contextualTitle": "Castle Coder"
         }
       ]
     },
