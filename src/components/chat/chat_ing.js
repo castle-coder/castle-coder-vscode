@@ -205,25 +205,18 @@ export function renderChatView(chatDataOrMessage) {
   if (chatDataOrMessage && Array.isArray(chatDataOrMessage.messages)) {
     if (chatDataOrMessage.messages.length === 0) {
       addMessage('Bot', 'Generate...');
-      startLoadingAnimation(); // 빈 세션일 때도 애니메이션 시작
-      setSendButtonEnabled(true, true); // Cancel 버튼으로 변경
+      startLoadingAnimation();
+      setSendButtonEnabled(true, true);
     } else {
       chatDataOrMessage.messages.forEach(msg => {
-        if (msg.sender === 'Bot') {
-          // 중복 Bot 메시지면 추가하지 않음
-          return;
-        }
         addMessage(msg.sender || 'Bot', msg.text);
       });
     }
-    return;
-  }
-
-  if (typeof chatDataOrMessage === 'string' && chatDataOrMessage.trim() !== '') {
+  } else if (typeof chatDataOrMessage === 'string' && chatDataOrMessage.trim() !== '') {
     addMessage('You', chatDataOrMessage);
     addMessage('Bot', 'Generate...');
-    startLoadingAnimation(); // 새 메시지 전송 시 애니메이션 시작
-    setSendButtonEnabled(true, true); // Cancel 버튼으로 변경
+    startLoadingAnimation();
+    setSendButtonEnabled(true, true);
   }
 
   // 입력창 세팅
