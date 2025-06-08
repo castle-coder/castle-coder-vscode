@@ -5,6 +5,7 @@ import { getSession } from '../chat/session/sessionState.js';
 import { uploadImage } from './imageUrl/imageUpload.js';
 import { deleteImage } from './imageUrl/imageDelete.js';
 import { getChatSessionId, handleSendMessage, setChatSessionId } from './chat_logic.js';
+import { loadChatSession } from '../chat/session/sessionLoad.js';
 
 // textarea 자동 높이 조절
 function autoResize(textarea) {
@@ -126,6 +127,14 @@ function startLoadingAnimation() {
       loadingMessage.textContent = loadingText;
     }
   }, 500);
+}
+
+// 로딩 애니메이션 정지 함수 추가
+function stopLoadingAnimation() {
+  if (loadingAnimationInterval) {
+    clearInterval(loadingAnimationInterval);
+    loadingAnimationInterval = null;
+  }
 }
 
 export function renderChatView(chatDataOrMessage) {
@@ -360,13 +369,25 @@ if (!window.__castleCoder_message_listener_registered) {
         console.log('[Debug] Token received:', data.content, '| Current buffer:', llmBotBuffer);
         updateBotMessage(llmBotBuffer);
       }
-      if (data.type === 'end') {
-        if (llmBotBuffer.trim() !== '') {
-          stopLoadingAnimation();
-        }
-        llmBotBuffer = '';
-        // end 타입이 오면 무조건 Send 버튼으로 변경
-        setSendButtonEnabled(true, false);
+    }
+    if (ev.data.type === 'llm-chat-end') {
+      console.log('llmbotbuffer:',llmBotBuffer);
+      const data = ev.data.data;
+      // 세션 log(메시지) 갱신
+      const sessionId = getChatSessionId && getChatSessionId();
+      if (sessionId) {
+        loadChatSession(sessionId).then(chatData => {
+          renderChatView(chatData);
+        });
+      }
+      llmBotBuffer = '';
+      if (llmBotBuffer.trim() !== '') {
+        stopLoadingAnimation();
+      }
+      // 마지막 봇 메시지 제거
+      const lastBotMessage = document.querySelector('.chat-message.bot:last-child');
+      if (lastBotMessage) {
+        lastBotMessage.remove();
       }
     }
     if (ev.data.type === 'llm-chat-error') {

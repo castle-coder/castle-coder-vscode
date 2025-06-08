@@ -44,14 +44,19 @@ export class LLMMessageHandler {
                   if (jsonStr) {
                     const msg = JSON.parse(jsonStr);
                     console.log('[Debug][connectAi] Parsed stream message:', msg);
-                    this.view.webview.postMessage({ type: 'llm-chat-response', data: msg });
                     if (msg.type === 'end') {
-                      response.data.destroy();
-                      // end 타입일 때 버튼 상태 변경 메시지 추가
+                      // end 타입일 때 버튼 상태를 먼저 변경
                       this.view.webview.postMessage({ 
                         type: 'update-button-state',
                         data: { isEndButton: false }
                       });
+                      // 그 다음에 end 메시지 전송
+                      this.view.webview.postMessage({ type: 'llm-chat-end', data: msg });
+                      // 버퍼 초기화 및 스트림 정리
+                      buffer = '';
+                      break;
+                    } else {
+                      this.view.webview.postMessage({ type: 'llm-chat-response', data: msg });
                     }
                   }
                 } else {
