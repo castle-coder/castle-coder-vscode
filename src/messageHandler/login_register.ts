@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import axios, { AxiosError, isAxiosError } from 'axios';
-import { setAccessToken } from '../auth';
+import { setAccessToken, setUserId } from '../auth';
 
 export class MessageHandler {
   private baseUrl = 'http://13.125.85.38:8080/api/v1';
@@ -77,36 +77,55 @@ export class MessageHandler {
 
   private async handleLogin(body: { email: string; password: string }) {
     try {
-      const res = await axios.post<{ data: { accessToken: string } }>(
-        `${this.baseUrl}/auth/login`,
-        body,
-        { 
-          withCredentials: true,
-          headers: {
-            'Content-Type': 'application/json'
+      const response = await axios.post(`${this.baseUrl}/auth/login`, body);
+      if (response.data) {
+        // 로그인 성공 시 상태 업데이트
+        await vscode.commands.executeCommand('setContext', 'castleCoder:isLoggedIn', true);
+        const { accessToken, refreshToken } = response.data.data;
+        if (accessToken) {
+          this.accessToken = accessToken;
+          setAccessToken(accessToken);
+
+          // JWT 토큰에서 userId 추출 (sub 클레임)
+          const tokenParts = accessToken.split('.');
+          if (tokenParts.length === 3) {
+            const payload = JSON.parse(atob(tokenParts[1]));
+            const userId = payload.sub;
+            setUserId(userId);
+            // Extension Host에 인증 정보 저장
+            this.view.webview.postMessage({
+              type: 'saveAuth',
+              data: {
+                accessToken,
+                refreshToken,
+                userId,
+                isAuthenticated: true
+              }
+            });
+
+            // loginResponse에 userId 추가
+            this.view.webview.postMessage({ 
+              type: 'loginResponse', 
+              success: true, 
+              data: {
+                ...response.data,
+                data: {
+                  ...response.data.data,
+                  id: userId
+                }
+              }
+            });
           }
         }
-      );
-      this.accessToken = res.data.data.accessToken;
-      setAccessToken(this.accessToken);
-      await vscode.commands.executeCommand('setContext', 'castleCoder:isLoggedIn', true);
-      this.view.webview.postMessage({
-        type: 'loginResponse',
-        success: true,
-        data: res.data,
-      });
-    } catch (err: unknown) {
-      let errMsg = '로그인 중 알 수 없는 오류가 발생했습니다.';
-      if (isAxiosError(err)) {
-        errMsg = err.response?.data?.message ?? err.message;
-      } else if (err instanceof Error) {
-        errMsg = err.message;
       }
-      this.view.webview.postMessage({
-        type: 'loginError',
-        success: false,
-        error: errMsg,
-      });
+    } catch (error) {
+      if (isAxiosError(error)) {
+        this.view.webview.postMessage({ 
+          type: 'loginResponse', 
+          success: false, 
+          error: error.response?.data?.message || '로그인에 실패했습니다.' 
+        });
+      }
     }
   }
 

@@ -12,7 +12,8 @@
     "onView:castleCoder.openview",
     "onCommand:castleCoder.openview",
     "onCommand:castleCoder.newChat",
-    "onCommand:castleCoder.securityRefactor"
+    "onCommand:castleCoder.securityRefactor",
+    "onStartupFinished"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -31,7 +32,8 @@
           "type": "webview",
           "id": "castleCoder.openview",
           "name": "Castle Coder",
-          "contextualTitle": "Castle Coder"
+          "contextualTitle": "Castle Coder",
+          "when": "castleCoder:isLoggedIn"
         }
       ]
     },

@@ -1,8 +1,28 @@
 import * as vscode from 'vscode';
 import { CastleCoderSidebarViewProvider } from './castlecoderSidebarViewProvider';
+import { setAccessToken, setUserId } from './auth';
+
+interface AuthState {
+  accessToken?: string;
+  userId?: string;
+  isAuthenticated: boolean;
+}
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('🟢 Castle Coder activated');
+
+  // 로그인 상태 초기화
+  const auth = context.globalState.get('castleCoder_auth') as AuthState | undefined;
+  if (auth) {
+    const { accessToken, userId } = auth;
+    if (accessToken) {
+      setAccessToken(accessToken);
+    }
+    if (userId) {
+      setUserId(userId);
+    }
+  }
+  vscode.commands.executeCommand('setContext', 'castleCoder:isLoggedIn', !!auth);
 
   const provider = new CastleCoderSidebarViewProvider(context.extensionUri, context);
 
@@ -23,9 +43,13 @@ export function activate(context: vscode.ExtensionContext) {
   // 2) 명령어: 사이드바 열기
   context.subscriptions.push(
     vscode.commands.registerCommand('castleCoder.openview', async () => {
-      await vscode.commands.executeCommand(
-        'workbench.view.extension.castlecoder-sidebar-view'
-      );
+      const auth = context.globalState.get('castleCoder_auth');
+      if (!auth) {
+        // 로그인되지 않은 경우 로그인 페이지로 리다이렉트
+        await vscode.commands.executeCommand('workbench.view.extension.castlecoder-sidebar-view');
+        return;
+      }
+      await vscode.commands.executeCommand('workbench.view.extension.castlecoder-sidebar-view');
     })
   );
 
