@@ -4,6 +4,42 @@ import { vscode } from '../../api/vscodeApi.js';
 import { renderChatView } from '../chat_ing.js';
 import { marked } from 'https://cdn.jsdelivr.net/npm/marked@4.3.0/lib/marked.esm.js';
 
+// 안전한 마크다운 파싱 (스트리밍 중 불완전한 마크다운 처리)
+function safeParseMarkdown(text) {
+  try {
+    // 불완전한 코드 블록 처리
+    let safeText = text;
+    
+    // 홀수 개의 ``` 가 있는 경우 (미완성 코드 블록)
+    const codeBlockMatches = safeText.match(/```/g);
+    if (codeBlockMatches && codeBlockMatches.length % 2 === 1) {
+      // 마지막 ```부터 끝까지를 일반 텍스트로 처리
+      const lastIndex = safeText.lastIndexOf('```');
+      const beforeLastBlock = safeText.substring(0, lastIndex);
+      const afterLastBlock = safeText.substring(lastIndex + 3);
+      safeText = beforeLastBlock + '\n```\n' + afterLastBlock + '\n```';
+    }
+    
+    // 불완전한 인라인 코드 처리
+    const inlineCodeMatches = safeText.match(/`/g);
+    if (inlineCodeMatches && inlineCodeMatches.length % 2 === 1) {
+      safeText += '`';
+    }
+    
+    return marked.parse(safeText);
+  } catch (error) {
+    console.warn('Markdown parsing error:', error);
+    // 파싱 실패 시 안전한 HTML 변환
+    return text.replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/\n/g, '<br>')
+              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+              .replace(/\*(.*?)\*/g, '<em>$1</em>')
+              .replace(/`([^`\n]+)`/g, '<code>$1</code>');
+  }
+}
+
 export class SecurityRefactoring {
   constructor() {
     this.llmBotBuffer = '';
@@ -78,7 +114,7 @@ export class SecurityRefactoring {
       document.getElementById('chatbox').appendChild(botMsg);
     }
     // 스트리밍 중에도 마크다운 파싱 적용
-    botMsg.querySelector('.text').innerHTML = marked.parse(content);
+    botMsg.querySelector('.text').innerHTML = safeParseMarkdown(content);
     chatbox.scrollTop = chatbox.scrollHeight;
   }
 

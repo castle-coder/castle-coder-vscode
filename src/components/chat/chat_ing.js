@@ -148,6 +148,124 @@ marked.setOptions({
   langPrefix: 'language-'
 });
 
+// 안전한 마크다운 파싱 (스트리밍 중 불완전한 마크다운 처리)
+function safeParseMarkdown(text) {
+  try {
+    // 불완전한 코드 블록 처리
+    let safeText = text;
+    
+    // 홀수 개의 ``` 가 있는 경우 (미완성 코드 블록)
+    const codeBlockMatches = safeText.match(/```/g);
+    if (codeBlockMatches && codeBlockMatches.length % 2 === 1) {
+      // 마지막 ```부터 끝까지를 일반 텍스트로 처리
+      const lastIndex = safeText.lastIndexOf('```');
+      const beforeLastBlock = safeText.substring(0, lastIndex);
+      const afterLastBlock = safeText.substring(lastIndex + 3);
+      safeText = beforeLastBlock + '\n```\n' + afterLastBlock + '\n```';
+    }
+    
+    // 불완전한 인라인 코드 처리
+    const inlineCodeMatches = safeText.match(/`/g);
+    if (inlineCodeMatches && inlineCodeMatches.length % 2 === 1) {
+      safeText += '`';
+    }
+    
+    return marked.parse(safeText);
+  } catch (error) {
+    console.warn('Markdown parsing error:', error);
+    // 파싱 실패 시 안전한 HTML 변환
+    return text.replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/\n/g, '<br>')
+              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+              .replace(/\*(.*?)\*/g, '<em>$1</em>')
+              .replace(/`([^`\n]+)`/g, '<code>$1</code>');
+  }
+}
+
+// 코드 블록에 복사 버튼 추가 함수
+function addCopyButtonsToCodeBlocks(element) {
+  const codeBlocks = element.querySelectorAll('pre code');
+  
+  codeBlocks.forEach((codeBlock, index) => {
+    const pre = codeBlock.parentElement;
+    
+    // 이미 복사 버튼이 있는지 확인
+    if (pre.querySelector('.copy-btn')) return;
+    
+    // 복사 버튼 생성
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'copy-btn';
+    copyBtn.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="currentColor" stroke-width="2" fill="none"/>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2" fill="none"/>
+      </svg>
+    `;
+    copyBtn.title = '코드 복사';
+    
+    // 복사 기능
+    copyBtn.addEventListener('click', async () => {
+      // HTML 태그 제거하고 원본 텍스트만 추출
+      let textToCopy = codeBlock.textContent || codeBlock.innerText;
+      
+      try {
+        await navigator.clipboard.writeText(textToCopy);
+        
+        // 성공 피드백
+        const originalHTML = copyBtn.innerHTML;
+        copyBtn.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="20,6 9,17 4,12" stroke="currentColor" stroke-width="2" fill="none"/>
+          </svg>
+        `;
+        copyBtn.style.color = '#22c55e';
+        
+        setTimeout(() => {
+          copyBtn.innerHTML = originalHTML;
+          copyBtn.style.color = '';
+        }, 2000);
+        
+      } catch (err) {
+        console.error('복사 실패:', err);
+        
+        // 폴백 방법 (구형 브라우저용)
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          
+          // 성공 피드백
+          const originalHTML = copyBtn.innerHTML;
+          copyBtn.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <polyline points="20,6 9,17 4,12" stroke="currentColor" stroke-width="2" fill="none"/>
+            </svg>
+          `;
+          copyBtn.style.color = '#22c55e';
+          
+          setTimeout(() => {
+            copyBtn.innerHTML = originalHTML;
+            copyBtn.style.color = '';
+          }, 2000);
+          
+        } catch (fallbackErr) {
+          console.error('폴백 복사도 실패:', fallbackErr);
+        } finally {
+          document.body.removeChild(textArea);
+        }
+      }
+    });
+    
+    // pre 태그에 상대 위치 설정 및 버튼 추가
+    pre.style.position = 'relative';
+    pre.appendChild(copyBtn);
+  });
+}
+
 // textarea 자동 높이 조절
 function autoResize(textarea) {
   textarea.style.height = 'auto';
@@ -195,6 +313,11 @@ function addMessage(sender, text, imageUrls = []) {
   chatbox.appendChild(el);
   chatbox.scrollTop = chatbox.scrollHeight;
   
+  // 봇 메시지인 경우 복사 버튼 추가
+  if (sender === 'Bot') {
+    addCopyButtonsToCodeBlocks(el);
+  }
+  
   // 봇의 로딩 메시지인 경우 애니메이션 시작
   if (sender === 'Bot' && text === 'Generate...') {
     startLoadingAnimation();
@@ -214,8 +337,11 @@ function updateBotMessage(text) {
   }
   lastBotMsg.innerHTML = `
     <div class="sender">Castle Coder</div>
-    <div class="text markdown-body">${marked.parse(text)}</div>
+    <div class="text markdown-body">${safeParseMarkdown(text)}</div>
   `;
+  
+  // 복사 버튼 추가
+  addCopyButtonsToCodeBlocks(lastBotMsg);
   
   chatbox.scrollTop = chatbox.scrollHeight;
 }
@@ -621,6 +747,42 @@ export function renderChatView(chatDataOrMessage) {
         font-style: italic;
         color: #d4d4d8;
       }
+      
+      /* 복사 버튼 스타일 */
+      .copy-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+        color: #8b949e;
+        cursor: pointer;
+        padding: 6px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        opacity: 0;
+        visibility: hidden;
+        z-index: 10;
+      }
+      
+      .markdown-body pre:hover .copy-btn {
+        opacity: 1;
+        visibility: visible;
+      }
+      
+      .copy-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: #f0f6fc;
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+      
+      .copy-btn:active {
+        transform: scale(0.95);
+      }
     </style>
   `;
 
@@ -662,6 +824,9 @@ export function renderChatView(chatDataOrMessage) {
           console.log('[ChatLog] chatbox.style.height:', getComputedStyle(chatbox).height);
           chatbox.scrollTop = chatbox.scrollHeight;
           console.log('[ChatLog] chatbox.scrollTop (after):', chatbox.scrollTop);
+          
+          // 모든 코드 블록에 복사 버튼 추가
+          addCopyButtonsToCodeBlocks(chatbox);
         }
       });
     }
