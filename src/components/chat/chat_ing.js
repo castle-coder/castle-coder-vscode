@@ -16,9 +16,9 @@ function autoResize(textarea) {
 }
 
 // 전역 addMessage 함수
-function addMessage(sender, text) {
+function addMessage(sender, text, imageUrls = []) {
   const chatbox = document.getElementById('chatbox');
-  console.log('[Debug] addMessage called. chatbox:', chatbox, 'sender:', sender, 'text:', text);
+  console.log('[Debug] addMessage called. chatbox:', chatbox, 'sender:', sender, 'text:', text, 'imageUrls:', imageUrls);
   if (!chatbox) return;
   const safeText = typeof text === 'string' ? text : '';
   const el = document.createElement('div');
@@ -27,9 +27,24 @@ function addMessage(sender, text) {
   // 봇 메시지인 경우 마크다운 파싱
   const formattedText = sender === 'Bot' ? marked.parse(safeText) : safeText.replace(/\n/g,'<br>');
   
+  // 이미지 HTML 생성
+  let imageHTML = '';
+  if (imageUrls && imageUrls.length > 0) {
+    imageHTML = '<div class="message-images" style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px;">';
+    imageUrls.forEach(imageUrl => {
+      imageHTML += `
+        <div class="message-image-container" style="border: 1px solid #444; border-radius: 4px; overflow: hidden; max-width: 60px;">
+          <img src="${imageUrl}" alt="첨부 이미지" style="width: 100%; height: auto; display: block; cursor: pointer;" onclick="window.open('${imageUrl}', '_blank')" />
+        </div>
+      `;
+    });
+    imageHTML += '</div>';
+  }
+  
   el.innerHTML = `
     <div class="sender">${sender === 'Bot' ? 'Castle Coder' : sender}</div>
     <div class="text markdown-body">${formattedText}</div>
+    ${imageHTML}
   `;
   chatbox.appendChild(el);
   chatbox.scrollTop = chatbox.scrollHeight;
@@ -405,7 +420,7 @@ export function renderChatView(chatDataOrMessage) {
       // 메시지를 원래 순서대로 출력
       chatDataOrMessage.messages.forEach(msg => {
         console.log('[ChatLog]', msg.createdAt, msg);
-        addMessage(msg.sender || 'Bot', msg.text);
+        addMessage(msg.sender || 'Bot', msg.text, msg.imageUrls || []);
       });
       // 메시지 로드 후 DOM 렌더링이 완료된 후 스크롤을 맨 아래로 이동
       requestAnimationFrame(() => {
@@ -513,7 +528,7 @@ export function renderChatView(chatDataOrMessage) {
       if (!msg) return;
       const imageUrls = attachedImages.map(img => img.imageUrl);
       // 질문을 보낼 때 바로 내 메시지를 추가
-      addMessage('You', msg);
+      addMessage('You', msg, imageUrls);
       addMessage('Bot', 'Generate...');
 
       setSendButtonEnabled(true, true); // Cancel 버튼으로 변경
