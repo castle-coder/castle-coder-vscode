@@ -11,7 +11,14 @@ import { sendLLMChatMessage, sendLLMChatMessageWithImage } from './connect/codeG
 // textarea 자동 높이 조절
 function autoResize(textarea) {
   textarea.style.height = 'auto';
-  textarea.style.height = textarea.scrollHeight + 'px';
+  const scrollHeight = textarea.scrollHeight;
+  const maxHeight = 120; // max-height와 동일하게 설정
+  
+  if (scrollHeight <= maxHeight) {
+    textarea.style.height = scrollHeight + 'px';
+  } else {
+    textarea.style.height = maxHeight + 'px';
+  }
 }
 
 export function renderStartView() {
@@ -29,35 +36,80 @@ export function renderStartView() {
   chatApp.style.display   = 'none';
 
   startApp.innerHTML = `
+    <style>
+      #first-question:hover {
+        border-color: rgba(255,255,255,0.25) !important;
+        background: rgba(255,255,255,0.08) !important;
+      }
+      #first-question:focus {
+        border-color: rgba(102, 126, 234, 0.6) !important;
+        background: rgba(255,255,255,0.08) !important;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+      }
+      #image-upload-btn-start:hover {
+        background: rgba(255,255,255,0.15) !important;
+        transform: scale(1.05);
+      }
+      #start-btn:hover {
+        background: linear-gradient(135deg, #7c8df0 0%, #8a5fb8 100%) !important;
+        transform: scale(1.05);
+      }
+        
+      #start-btn:active {
+        transform: scale(0.95);
+      }
+      #first-question::placeholder {
+        color: rgba(255,255,255,0.5);
+      }
+    </style>
     <div class="start-container" style="width: 100%; box-sizing: border-box;">
       <!-- <div id="session-list" style="margin-bottom: 16px;"></div> -->
       <div class="start-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; width: 100%;">
         <h1 style="margin:0; font-size: 2rem; letter-spacing: -2px;">Ask Castle Coder</h1>
         <a href="#" id="chat-start-logout" class="text-link" style="font-size: 1.2rem; color: #888;">Logout</a>
       </div>
-      <div class="description-section" style="margin-bottom: 32px; text-align: center;">
+      <div class="description-section" style="margin-bottom: 48px; text-align: center;">
         <p style="margin: 0 0 16px 0; font-size: 16px; color: #e0e0e0; line-height: 1.5; font-weight: 500;">
-          Your AI Assistant for Secure & Efficient Code Development
+          Your AI Assistant for Secure & Efficient </br>
+          Code Development
         </p>
         <p style="margin: 0 0 8px 0; font-size: 14px; color: #bbb; line-height: 1.4;">
-          Get expert help with code reviews, security vulnerability analysis, refactoring, and optimization
+          Get expert help with code reviews, </br>
+          security vulnerability analysis, </br>
+          refactoring, and optimization
         </p>
         <p style="margin: 0; font-size: 13px; color: #999; line-height: 1.3;">
-          Smart code suggestions 
-          • Security-first approach 
-          • Performance optimization 
-          • Best practices guidance
+          Smart code suggestions </br>
+          • Security-first approach </br>
+          • Performance optimization </br>
+          • Best practices guidance </br>
         </p>
       </div>
-      <div class="chat-input-area">
-        <div id="image-file-list-start" class="image-file-list" style="display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;"></div>
-        <div class="input-row">
+      <div class="chat-input-area" style="margin-top: 16px; margin-bottom: 0px;">
+        <div class="input-container" style="margin-bottom: 2px;">
           <input type="file" id="image-upload-start" accept="image/*" style="display:none" multiple />
-          <button id="image-upload-btn-start" title="이미지 첨부" type="button" style="margin-right:8px; background:transparent; border:none; cursor:pointer;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" fill="none"/><path d="M4 5C4 4.44772 4.44772 4 5 4H19C19.5523 4 20 4.44772 20 5V19C20 19.5523 19.5523 20 19 20H5C4.44772 20 4 19.5523 4 19V5Z" stroke="#bbb" stroke-width="1.5"/><path d="M8 13L11 16L16 11" stroke="#bbb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8.5" cy="8.5" r="1.5" fill="#bbb"/></svg>
+          <textarea 
+            id="first-question" 
+            rows="1" 
+            placeholder="How can I help you?" 
+            style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 8px; outline: none; color: #fff; font-size: 13px; line-height: 1.3; resize: none; min-height: 18px; max-height: 120px; overflow-y: auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; transition: all 0.2s ease; box-sizing: border-box;"
+          ></textarea>
+        </div>
+        <div class="button-row" style="display: flex; align-items: center; gap: 2px;">
+          <button id="image-upload-btn-start" title="이미지 첨부" type="button" style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: rgba(255,255,255,0.1); border: none; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; flex-shrink: 0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="24" height="24" fill="none"/>
+              <path d="M4 5C4 4.44772 4.44772 4 5 4H19C19.5523 4 20 4.44772 20 5V19C20 19.5523 19.5523 20 19 20H5C4.44772 20 4 19.5523 4 19V5Z" stroke="#bbb" stroke-width="1.5"/>
+              <path d="M8 13L11 16L16 11" stroke="#bbb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="8.5" cy="8.5" r="1.5" fill="#bbb"/>
+            </svg>
           </button>
-          <textarea id="first-question" rows="2" placeholder="Write your first question"></textarea>
-          <button id="start-btn" class="sharp-btn">Start</button>
+          <div id="image-file-list-start" class="image-file-list" style="display:flex;gap:8px;flex-wrap:wrap;flex:1;"></div>
+          <button id="start-btn" style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; flex-shrink: 0;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z" fill="white"/>
+            </svg>
+          </button>
         </div>
       </div>
     </div>
@@ -72,7 +124,6 @@ export function renderStartView() {
   const ta  = document.getElementById('first-question');
   const btn = document.getElementById('start-btn');
   if (ta) {
-    ta.style.overflow = 'hidden';
     autoResize(ta);
     ta.addEventListener('input', () => autoResize(ta));
     ta.addEventListener('keydown', e => {

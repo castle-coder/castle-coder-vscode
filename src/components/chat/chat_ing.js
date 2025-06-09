@@ -12,7 +12,14 @@ import { marked } from 'https://cdn.jsdelivr.net/npm/marked@4.3.0/lib/marked.esm
 // textarea 자동 높이 조절
 function autoResize(textarea) {
   textarea.style.height = 'auto';
-  textarea.style.height = textarea.scrollHeight + 'px';
+  const scrollHeight = textarea.scrollHeight;
+  const maxHeight = 120; // max-height와 동일하게 설정
+  
+  if (scrollHeight <= maxHeight) {
+    textarea.style.height = scrollHeight + 'px';
+  } else {
+    textarea.style.height = maxHeight + 'px';
+  }
 }
 
 // 전역 addMessage 함수
@@ -81,47 +88,67 @@ function setSendButtonEnabled(enabled, isEndButton = false) {
   btn.disabled = !enabled;
   if (enabled) {
     if (isEndButton) {
-      btn.textContent = 'Cancel';
-      btn.className = 'sharp-btn cancel-btn';
+      // Cancel 버튼 (네모 아이콘)
+      btn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="4" width="16" height="16" fill="white"/>
+        </svg>
+      `;
       btn.style.cssText = `
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 28px !important;
+        height: 28px !important;
         background: #ef4444 !important;
-        background-image: none !important;
-        border-color: #ef4444 !important;
-        color: white !important;
-        padding: 8px 16px !important;
-        border-radius: 4px !important;
-        border: 1px solid !important;
-        font-weight: 500 !important;
+        border: none !important;
+        border-radius: 6px !important;
         cursor: pointer !important;
+        transition: all 0.2s ease !important;
+        flex-shrink: 0 !important;
         opacity: 1 !important;
-        box-shadow: none !important;
       `;
     } else {
-      btn.textContent = 'Send';
-      btn.className = 'sharp-btn';
+      // Send 버튼 (화살표 아이콘)
+      btn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z" fill="white"/>
+        </svg>
+      `;
       btn.style.cssText = `
-        background-color: #22c55e !important;
-        border-color: #22c55e !important;
-        color: white !important;
-        padding: 8px 16px !important;
-        border-radius: 4px !important;
-        border: 1px solid !important;
-        font-weight: 500 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 28px !important;
+        height: 28px !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        border: none !important;
+        border-radius: 6px !important;
         cursor: pointer !important;
+        transition: all 0.2s ease !important;
+        flex-shrink: 0 !important;
         opacity: 1 !important;
       `;
     }
   } else {
-    btn.className = 'sharp-btn disabled-btn';
+    // Disabled 버튼
+    btn.innerHTML = `
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z" fill="white"/>
+      </svg>
+    `;
     btn.style.cssText = `
-      background-color: #888 !important;
-      border-color: #888 !important;
-      color: white !important;
-      padding: 8px 16px !important;
-      border-radius: 4px !important;
-      border: 1px solid !important;
-      font-weight: 500 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 28px !important;
+      height: 28px !important;
+      background: #888 !important;
+      border: none !important;
+      border-radius: 6px !important;
       cursor: not-allowed !important;
+      transition: all 0.2s ease !important;
+      flex-shrink: 0 !important;
       opacity: 0.7 !important;
     `;
   }
@@ -183,14 +210,30 @@ export function renderChatView(chatDataOrMessage) {
       </div>
       <div class="chatbox" id="chatbox"></div>
       <div class="chat-input-area">
-        <div id="image-file-list-ing" class="image-file-list" style="display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;"></div>
-        <div class="input-row">
+        <div class="input-container" style="margin-bottom: 2px;">
           <input type="file" id="image-upload-ing" accept="image/*" style="display:none" multiple />
-          <button id="image-upload-btn-ing" title="이미지 첨부" type="button" style="margin-right:8px; background:transparent; border:none; cursor:pointer;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" fill="none"/><path d="M4 5C4 4.44772 4.44772 4 5 4H19C19.5523 4 20 4.44772 20 5V19C20 19.5523 19.5523 20 19 20H5C4.44772 20 4 19.5523 4 19V5Z" stroke="#bbb" stroke-width="1.5"/><path d="M8 13L11 16L16 11" stroke="#bbb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8.5" cy="8.5" r="1.5" fill="#bbb"/></svg>
+          <textarea 
+            id="ask-input" 
+            rows="1" 
+            placeholder="How can I help you?" 
+            style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 8px; outline: none; color: #fff; font-size: 13px; line-height: 1.3; resize: none; min-height: 18px; max-height: 120px; overflow-y: auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; transition: all 0.2s ease; box-sizing: border-box;"
+          ></textarea>
+        </div>
+        <div class="button-row" style="display: flex; align-items: center; gap: 2px;">
+          <button id="image-upload-btn-ing" title="이미지 첨부" type="button" style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: rgba(255,255,255,0.1); border: none; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; flex-shrink: 0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="24" height="24" fill="none"/>
+              <path d="M4 5C4 4.44772 4.44772 4 5 4H19C19.5523 4 20 4.44772 20 5V19C20 19.5523 19.5523 20 19 20H5C4.44772 20 4 19.5523 4 19V5Z" stroke="#bbb" stroke-width="1.5"/>
+              <path d="M8 13L11 16L16 11" stroke="#bbb" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="8.5" cy="8.5" r="1.5" fill="#bbb"/>
+            </svg>
           </button>
-          <textarea id="ask-input" rows="1" placeholder="Ask more..."></textarea>
-          <button id="send-btn" class="sharp-btn">Send</button>
+          <div id="image-file-list-ing" class="image-file-list" style="display:flex;gap:8px;flex-wrap:wrap;flex:1;"></div>
+          <button id="send-btn" style="display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; flex-shrink: 0;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M2 21L23 12L2 3V10L17 12L2 14V21Z" fill="white"/>
+            </svg>
+          </button>
         </div>
       </div>
     </div>
@@ -199,16 +242,12 @@ export function renderChatView(chatDataOrMessage) {
         display: flex;
         flex-direction: column;
         height: 100vh;
-        max-height: 100vh;
       }
       .chat-header {
-        flex: 0 0 auto;
+        flex-shrink: 0;
         padding: 0.5rem 0.75rem;
         border-bottom: 1px solid #3f3f46;
         background-color: #18181b;
-        position: sticky;
-        top: 0;
-        z-index: 10;
         height: 50px;
         display: flex;
         align-items: center;
@@ -222,15 +261,12 @@ export function renderChatView(chatDataOrMessage) {
         color: #f4f4f5;
       }
       .chatbox {
-        flex: 1 1 auto;
+        flex: 1;
         overflow-y: auto;
-        overflow-x: hidden;
         padding: 0.75rem;
-        min-height: 0;
-        height: calc(100vh - 50px - 80px);
       }
       .chat-input-area {
-        flex: 0 0 auto;
+        flex-shrink: 0;
         padding: 0.25rem 0.75rem;
         border-top: 1px solid #3f3f46;
       }
@@ -453,7 +489,6 @@ export function renderChatView(chatDataOrMessage) {
 
   // 입력창 세팅
   if (ta) {
-    ta.style.overflow = 'hidden';
     autoResize(ta);
     ta.addEventListener('input', () => autoResize(ta));
     ta.addEventListener('keydown', e => {
@@ -518,8 +553,8 @@ export function renderChatView(chatDataOrMessage) {
       const msg = ta.value.trim();
       console.log('[Debug] Send button clicked:', msg);
       
-      // Cancel 버튼인 경우 취소 처리
-      if (btn.textContent === 'Cancel') {
+      // Cancel 버튼인 경우 취소 처리 (배경색으로 판단)
+      if (btn.style.background.includes('#ef4444') || btn.style.backgroundColor.includes('rgb(239, 68, 68)')) {
         console.log('[Debug] Cancel button clicked');
         cancelResponse();
         return;
@@ -580,7 +615,7 @@ if (!window.__castleCoder_message_listener_registered) {
         if (lastBotMessage) {
           lastBotMessage.innerHTML = `
             <div class="sender">Castle Coder</div>
-            <div class="text">응답이 취소되었습니다.</div>
+            <div class="text">cancelled.</div>
           `;
         }
         return;
@@ -610,7 +645,7 @@ if (!window.__castleCoder_message_listener_registered) {
         if (lastBotMessage) {
           lastBotMessage.innerHTML = `
             <div class="sender">Castle Coder</div>
-            <div class="text">응답이 취소되었습니다.</div>
+            <div class="text">cancelled.</div>
           `;
         }
       } else {
@@ -704,5 +739,5 @@ function cancelResponse() {
   cancelLLMResponse(chatSessionId);
   
   // 취소 메시지 추가
-  addMessage('Bot', '응답이 취소되었습니다.');
+  addMessage('Bot', 'cancelled.');
 }
