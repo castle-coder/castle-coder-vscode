@@ -1,13 +1,13 @@
 import { renderStartView } from './chat_start.js';
 import { logout } from '../member/auth.js';
 import { renderSessionList, renderSessionListOverlay } from '../chat/session/chat_session.js';
-import { getSession } from '../chat/session/sessionState.js';
-import { uploadImage } from './imageUrl/imageUpload.js';
-import { deleteImage } from './imageUrl/imageDelete.js';
+import { getSession, setSession } from './session/sessionState.js';
+import { uploadImage, deleteImage } from './connect/imageUpload.js';
 import { getChatSessionId, handleSendMessage, setChatSessionId } from './chat_logic.js';
-import { loadChatSession } from '../chat/session/sessionLoad.js';
+import { loadChatSession } from './session/sessionLoad.js';
 import { cancelResponse as cancelLLMResponse } from './connect/codeGenerate.js';
 import { marked } from 'https://cdn.jsdelivr.net/npm/marked@4.3.0/lib/marked.esm.js';
+import { requestUpdateSessionTitle } from './session/sessionApi.js';
 
 // 간단한 syntax highlighting 함수
 function highlightCode(code, language) {
@@ -547,7 +547,7 @@ export function renderChatView(chatDataOrMessage) {
   chatApp.innerHTML = `
     <div class="chat-container">
       <div class="chat-header">
-        <h2>${sessionTitle}</h2>
+        <h2 class="session-title-header" title="클릭하여 제목 편집">${sessionTitle}</h2>
         <a href="#" id="chat-ing-logout" class="text-link">Logout</a>
       </div>
       <div class="chatbox" id="chatbox"></div>
@@ -601,6 +601,24 @@ export function renderChatView(chatDataOrMessage) {
         font-size: 1.1rem;
         font-weight: 600;
         color: #f4f4f5;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+      }
+      .chat-header h2:hover {
+        background-color: rgba(255,255,255,0.1);
+      }
+      .session-title-edit-header {
+        background: #333 !important;
+        border: 1px solid #4CAF50;
+        outline: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        color: #fff;
+        font-size: 1.1rem;
+        font-weight: 600;
+        width: 200px;
       }
       .chatbox {
         flex: 1;
@@ -1003,6 +1021,63 @@ export function renderChatView(chatDataOrMessage) {
       autoResize(ta);
       attachedImages = [];
       renderFileList(attachedImages);
+    });
+  }
+
+  // 세션 제목 편집 이벤트 리스너
+  const sessionTitleHeader = document.querySelector('.session-title-header');
+  if (sessionTitleHeader) {
+    sessionTitleHeader.addEventListener('click', async (e) => {
+      const sessionId = getChatSessionId();
+      if (!sessionId) return;
+      
+      const currentTitle = sessionTitleHeader.textContent === 'Castle Coder' ? '' : sessionTitleHeader.textContent;
+      
+      // 입력 필드로 변경
+      const input = document.createElement('input');
+      input.className = 'session-title-edit-header';
+      input.type = 'text';
+      input.value = currentTitle;
+      
+      sessionTitleHeader.style.display = 'none';
+      sessionTitleHeader.parentNode.insertBefore(input, sessionTitleHeader.nextSibling);
+      input.focus();
+      input.select();
+
+      // 제목 변경 완료 함수
+      const saveTitle = async () => {
+        const newTitle = input.value.trim();
+        if (newTitle !== currentTitle) {
+          try {
+            await requestUpdateSessionTitle(sessionId, newTitle);
+            sessionTitleHeader.textContent = newTitle || 'Castle Coder';
+            // 세션 상태도 업데이트
+            setSession(sessionId, newTitle);
+            console.log('세션 제목이 변경되었습니다:', newTitle);
+          } catch (error) {
+            console.error('제목 변경 실패:', error);
+            alert('제목 변경에 실패했습니다: ' + error.message);
+          }
+        }
+        // 편집 모드 종료
+        input.remove();
+        sessionTitleHeader.style.display = '';
+      };
+
+      // Enter 키로 저장
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          saveTitle();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          input.remove();
+          sessionTitleHeader.style.display = '';
+        }
+      });
+
+      // 포커스 아웃 시 저장
+      input.addEventListener('blur', saveTitle);
     });
   }
 }

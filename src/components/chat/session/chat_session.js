@@ -1,5 +1,5 @@
 import { attachDeleteHandlers } from './sessionDelete.js';
-import { requestChatSessionList } from './sessionApi.js';
+import { requestChatSessionList, requestUpdateSessionTitle } from './sessionApi.js';
 import { loadChatSession } from './sessionLoad.js';
 import { renderChatView } from '../chat_ing.js';
 import { setSession } from './sessionState.js';
@@ -26,6 +26,16 @@ export async function renderSessionList() {
           background: #2c313a !important;
           color: #fff !important;
         }
+        .session-title-edit {
+          background: #333 !important;
+          border: 1px solid #4CAF50;
+          outline: none;
+          padding: 4px 8px;
+          border-radius: 4px;
+          color: #fff;
+          font-size: 1rem;
+          width: 100%;
+        }
       `;
       document.head.appendChild(style);
     }
@@ -38,7 +48,7 @@ export async function renderSessionList() {
               <path d="M4 20V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7l-3 3z" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </span>
-          <span>${s.title || '(No Title)'}</span>
+          <span class="session-title" title="더블클릭하여 제목 편집">${s.title || '(No Title)'}</span>
         </button>
         <button class="del-session-btn" data-id="${s.id}">DEL</button>
       </div>`
@@ -47,29 +57,86 @@ export async function renderSessionList() {
     // 세션 클릭 이벤트
     listDiv.querySelectorAll('.session-item').forEach(btn => {
       btn.addEventListener('click', async e => {
-        const id = btn.getAttribute('data-id');
-        const title = btn.getAttribute('data-title') || '';
-        try {
-          setSession(Number(id), title);
-          setChatSessionId(Number(id));
-          const chatData = await loadChatSession(Number(id));
-          renderChatView(chatData);
-          
-          // 세션 클릭 시 화면 전환을 위한 메시지 전송
-          window.postMessage({ type: 'sessionClicked' }, '*');
-          
-          // 세션 리스트 오버레이 닫기
-          const overlay = document.getElementById('session-list-overlay');
-          if (overlay) {
-            overlay.remove();
+        // 편집 모드가 아닐 때만 세션 로드
+        if (!e.target.closest('.session-title-edit')) {
+          const id = btn.getAttribute('data-id');
+          const title = btn.getAttribute('data-title') || '';
+          try {
+            setSession(Number(id), title);
+            setChatSessionId(Number(id));
+            const chatData = await loadChatSession(Number(id));
+            renderChatView(chatData);
+            
+            // 세션 클릭 시 화면 전환을 위한 메시지 전송
+            window.postMessage({ type: 'sessionClicked' }, '*');
+            
+            // 세션 리스트 오버레이 닫기
+            const overlay = document.getElementById('session-list-overlay');
+            if (overlay) {
+              overlay.remove();
+            }
+            // 렌더링 완료 후 스크롤을 맨 밑으로 이동
+            setTimeout(() => {
+              window.postMessage({ type: 'scrollToBottom' }, '*');
+            }, 100);
+          } catch (error) {
+            console.error('Error loading chat session:', error);
           }
-          // 렌더링 완료 후 스크롤을 맨 밑으로 이동
-          setTimeout(() => {
-            window.postMessage({ type: 'scrollToBottom' }, '*');
-          }, 100);
-        } catch (error) {
-          console.error('Error loading chat session:', error);
         }
+      });
+
+      // 제목 더블클릭 이벤트 (편집 모드)
+      const titleSpan = btn.querySelector('.session-title');
+      titleSpan.addEventListener('dblclick', async (e) => {
+        e.stopPropagation();
+        const sessionId = btn.getAttribute('data-id');
+        const currentTitle = titleSpan.textContent === '(No Title)' ? '' : titleSpan.textContent;
+        
+        // 입력 필드로 변경
+        const input = document.createElement('input');
+        input.className = 'session-title-edit';
+        input.type = 'text';
+        input.value = currentTitle;
+        input.style.width = `${titleSpan.offsetWidth}px`;
+        
+        titleSpan.style.display = 'none';
+        titleSpan.parentNode.insertBefore(input, titleSpan.nextSibling);
+        input.focus();
+        input.select();
+
+        // 제목 변경 완료 함수
+        const saveTitle = async () => {
+          const newTitle = input.value.trim();
+          if (newTitle !== currentTitle) {
+            try {
+              await requestUpdateSessionTitle(Number(sessionId), newTitle);
+              titleSpan.textContent = newTitle || '(No Title)';
+              btn.setAttribute('data-title', newTitle);
+              console.log('세션 제목이 변경되었습니다:', newTitle);
+            } catch (error) {
+              console.error('제목 변경 실패:', error);
+              alert('제목 변경에 실패했습니다: ' + error.message);
+            }
+          }
+          // 편집 모드 종료
+          input.remove();
+          titleSpan.style.display = '';
+        };
+
+        // Enter 키로 저장
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            saveTitle();
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            input.remove();
+            titleSpan.style.display = '';
+          }
+        });
+
+        // 포커스 아웃 시 저장
+        input.addEventListener('blur', saveTitle);
       });
     });
 
