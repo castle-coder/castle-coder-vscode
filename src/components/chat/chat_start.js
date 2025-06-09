@@ -37,7 +37,7 @@ export function renderStartView() {
       </div>
       <div class="start-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; width: 100%;">
         <h1 style="margin:0; font-size: 2rem; letter-spacing: -2px;">Ask Castle Coder</h1>
-        <a href="#" id="chat-start-logout" class="text-link" style="margin-left: 24px; font-size: 1.2rem; color: #888;">Logout</a>
+        <a href="#" id="chat-start-logout" class="text-link" style="font-size: 1.2rem; color: #888;">Logout</a>
       </div>
       <div class="chat-input-area">
         <div class="input-row">

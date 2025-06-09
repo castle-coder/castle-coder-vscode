@@ -180,6 +180,45 @@ export function renderChatView(chatDataOrMessage) {
       </div>
     </div>
     <style>
+      .chat-container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        max-height: 100vh;
+      }
+      .chat-header {
+        flex: 0 0 auto;
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid #3f3f46;
+        background-color: #18181b;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .chat-header h2 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #f4f4f5;
+      }
+      .chatbox {
+        flex: 1 1 auto;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0.75rem;
+        min-height: 0;
+        height: calc(100vh - 50px - 80px);
+      }
+      .chat-input-area {
+        flex: 0 0 auto;
+        padding: 0.25rem 0.75rem;
+        border-top: 1px solid #3f3f46;
+      }
       .sharp-btn {
         padding: 8px 16px;
         border-radius: 4px;
@@ -368,10 +407,22 @@ export function renderChatView(chatDataOrMessage) {
         console.log('[ChatLog]', msg.createdAt, msg);
         addMessage(msg.sender || 'Bot', msg.text);
       });
-      // 메시지 로드 후 스크롤을 맨 아래로 이동
-      if (chatbox) {
-        chatbox.scrollTop = chatbox.scrollHeight;
-      }
+      // 메시지 로드 후 DOM 렌더링이 완료된 후 스크롤을 맨 아래로 이동
+      requestAnimationFrame(() => {
+        if (chatbox) {
+          console.log('[ChatLog] scrollToBottom');
+          console.log('[ChatLog] chatbox:', chatbox);
+          console.log('[ChatLog] chatbox.scrollHeight:', chatbox.scrollHeight);
+          console.log('[ChatLog] chatbox.clientHeight:', chatbox.clientHeight);
+          console.log('[ChatLog] chatbox.offsetHeight:', chatbox.offsetHeight);
+          console.log('[ChatLog] chatbox.scrollTop (before):', chatbox.scrollTop);
+          console.log('[ChatLog] chatbox.style.overflow:', getComputedStyle(chatbox).overflow);
+          console.log('[ChatLog] chatbox.style.overflowY:', getComputedStyle(chatbox).overflowY);
+          console.log('[ChatLog] chatbox.style.height:', getComputedStyle(chatbox).height);
+          chatbox.scrollTop = chatbox.scrollHeight;
+          console.log('[ChatLog] chatbox.scrollTop (after):', chatbox.scrollTop);
+        }
+      });
     }
   } else if (typeof chatDataOrMessage === 'string' && chatDataOrMessage.trim() !== '') {
     addMessage('You', chatDataOrMessage);

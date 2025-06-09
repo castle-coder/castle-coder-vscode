@@ -54,6 +54,19 @@ export async function renderSessionList() {
           setChatSessionId(Number(id));
           const chatData = await loadChatSession(Number(id));
           renderChatView(chatData);
+          
+          // 세션 클릭 시 화면 전환을 위한 메시지 전송
+          window.postMessage({ type: 'sessionClicked' }, '*');
+          
+          // 세션 리스트 오버레이 닫기
+          const overlay = document.getElementById('session-list-overlay');
+          if (overlay) {
+            overlay.remove();
+          }
+          // 렌더링 완료 후 스크롤을 맨 밑으로 이동
+          setTimeout(() => {
+            window.postMessage({ type: 'scrollToBottom' }, '*');
+          }, 100);
         } catch (error) {
           console.error('Error loading chat session:', error);
         }

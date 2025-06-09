@@ -35,8 +35,20 @@ export class SecurityRefactoring {
           sessionTitle: message.sessionTitle,
           messages: []
         });
+      } else if (message.type === 'scrollToBottom') {
+        // 스크롤을 맨 밑으로 내리기
+        this.scrollToBottom();
       }
     });
+  }
+
+  scrollToBottom() {
+    const chatbox = document.getElementById('chatbox');
+    if (chatbox) {
+      setTimeout(() => {
+        chatbox.scrollTop = chatbox.scrollHeight;
+      }, 100); // 약간의 딜레이를 주어 DOM 업데이트 후 스크롤
+    }
   }
 
   handleSecurityResponse(response) {
@@ -47,6 +59,7 @@ export class SecurityRefactoring {
       this.llmBotBuffer += response.content;
       this.updateBotMessage(this.llmBotBuffer);
     }
+    
     if (response.type === 'end') {
       this.llmBotBuffer = '';
     }

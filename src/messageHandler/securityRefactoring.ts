@@ -54,6 +54,11 @@ export class SecurityRefactoringHandler {
           prompt: message.prompt
         });
         
+        // 스크롤을 맨 밑으로 내리기
+        this.webview.webview.postMessage({
+          type: 'scrollToBottom'
+        });
+        
         console.log('[CastleCoder] sessionCreated message sent:', { chatSessionId, sessionTitle: message.sessionTitle });
         
         // SSE 요청 (connectAi.ts와 동일한 방식)
