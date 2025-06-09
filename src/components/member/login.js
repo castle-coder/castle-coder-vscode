@@ -42,6 +42,19 @@ export function renderLoginView() {
     );
   });
 
+  // 로그인 성공 메시지 수신
+  window.addEventListener('message', function handleLoginMsg(event) {
+    const message = event.data;
+    if (message.type === 'loginResponse' && message.success) {
+      // 로그인 성공 시 버튼 상태 업데이트
+      const startBtn = document.getElementById('start-btn');
+      const imageUploadBtn = document.getElementById('image-upload-btn-start');
+      if (startBtn) startBtn.style.opacity = '1';
+      if (imageUploadBtn) imageUploadBtn.style.opacity = '1';
+      window.removeEventListener('message', handleLoginMsg);
+    }
+  });
+
   document.getElementById('register-btn').addEventListener('click', () => {
     renderRegisterView();
   });

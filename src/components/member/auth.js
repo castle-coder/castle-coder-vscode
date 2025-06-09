@@ -70,21 +70,24 @@ window.addEventListener('message', (e) => {
     case 'loginResponse':
       // { success: true, data: { token, ... } }
       if (msg.success) {
-        const { accessToken, refreshToken, ...user } = msg.data;
+        const { accessToken, refreshToken, id, ...user } = msg.data.data;
         window.__castleCoder_auth = {
           isAuthenticated: true,
           user: user,
           accessToken: accessToken,
-          refreshToken: refreshToken
+          refreshToken: refreshToken,
+          userId: id
         };
         // Extension Host에도 저장
-        console.log('[CastleCoder][Webview] Sending saveAuth', { user, accessToken, refreshToken });
+        console.log('[CastleCoder][Webview] Sending saveAuth', { user, accessToken, refreshToken, userId: id });
         vscode.postMessage({
           type: 'saveAuth',
           data: {
             user: user,
             accessToken: accessToken,
-            refreshToken: refreshToken
+            refreshToken: refreshToken,
+            userId: id,
+            isAuthenticated: true
           }
         });
         renderStartView();

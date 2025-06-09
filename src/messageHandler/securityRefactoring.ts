@@ -30,12 +30,23 @@ export class SecurityRefactoringHandler {
           { headers }
         );
         console.log('[CastleCoder] Chat session title updated:', message.sessionTitle);
+        
+        // 세션 생성 후 뷰 업데이트
         this.webview.webview.postMessage({
           type: 'sessionCreated',
           chatSessionId,
           sessionTitle: message.sessionTitle || 'Security Refactoring'
         });
+        
+        // 채팅 뷰로 전환
+        this.webview.webview.postMessage({
+          type: 'showChatView',
+          chatSessionId,
+          sessionTitle: message.sessionTitle || 'Security Refactoring'
+        });
+        
         console.log('[CastleCoder] sessionCreated message sent:', { chatSessionId, sessionTitle: message.sessionTitle });
+        
         // SSE 요청 (connectAi.ts와 동일한 방식)
         const sseHeaders = {
           'Content-Type': 'application/json',

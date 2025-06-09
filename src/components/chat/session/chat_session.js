@@ -3,6 +3,7 @@ import { requestChatSessionList } from './sessionApi.js';
 import { loadChatSession } from './sessionLoad.js';
 import { renderChatView } from '../chat_ing.js';
 import { setSession } from './sessionState.js';
+import { setChatSessionId } from '../chat_logic.js';
 
 export async function renderSessionList() {
   const listDiv = document.getElementById('session-list');
@@ -10,6 +11,8 @@ export async function renderSessionList() {
   listDiv.innerHTML = '<div>Loading...</div>';
   try {
     const sessions = await requestChatSessionList();
+    // 세션 id 기준 오름차순 정렬
+    sessions.sort((a, b) => a.id - b.id);
     if (!sessions.length) {
       listDiv.innerHTML = '<div style="color:#888;">No previous chats.</div>';
       return;
@@ -47,9 +50,9 @@ export async function renderSessionList() {
         const id = btn.getAttribute('data-id');
         const title = btn.getAttribute('data-title') || '';
         try {
-          const chatData = await loadChatSession(Number(id));
-
           setSession(Number(id), title);
+          setChatSessionId(Number(id));
+          const chatData = await loadChatSession(Number(id));
           renderChatView(chatData);
         } catch (error) {
           console.error('Error loading chat session:', error);
@@ -59,7 +62,8 @@ export async function renderSessionList() {
 
     // DEL 버튼에만 삭제 기능 부여 (UI에서만 삭제)
     attachDeleteHandlers(listDiv, (id) => {
-      const div = listDiv.querySelector(`.del-session-btn[data-id="${id}"]`).parentElement;
+      const btn = listDiv.querySelector(`.del-session-btn[data-id="${id}"]`);
+      const div = btn ? btn.parentElement : null;
       if (div) div.remove();
     });
   } catch (e) {

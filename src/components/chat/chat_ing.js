@@ -4,7 +4,10 @@ import { renderSessionList, renderSessionListOverlay } from '../chat/session/cha
 import { getSession } from '../chat/session/sessionState.js';
 import { uploadImage } from './imageUrl/imageUpload.js';
 import { deleteImage } from './imageUrl/imageDelete.js';
-import { getChatSessionId, handleSendMessage } from './chat_logic.js';
+import { getChatSessionId, handleSendMessage, setChatSessionId } from './chat_logic.js';
+import { loadChatSession } from '../chat/session/sessionLoad.js';
+import { cancelResponse as cancelLLMResponse } from './connect/codeGenerate.js';
+import { marked } from 'https://cdn.jsdelivr.net/npm/marked@4.3.0/lib/marked.esm.js';
 
 // textarea 자동 높이 조절
 function autoResize(textarea) {
@@ -20,12 +23,21 @@ function addMessage(sender, text) {
   const safeText = typeof text === 'string' ? text : '';
   const el = document.createElement('div');
   el.className = `chat-message ${sender==='You'?'user':'bot'}`;
+  
+  // 봇 메시지인 경우 마크다운 파싱
+  const formattedText = sender === 'Bot' ? marked.parse(safeText) : safeText.replace(/\n/g,'<br>');
+  
   el.innerHTML = `
-    <div class="sender">${sender}</div>
-    <div class="text">${safeText.replace(/\n/g,'<br>')}</div>
+    <div class="sender">${sender === 'Bot' ? 'Castle Coder' : sender}</div>
+    <div class="text markdown-body">${formattedText}</div>
   `;
   chatbox.appendChild(el);
   chatbox.scrollTop = chatbox.scrollHeight;
+  
+  // 봇의 로딩 메시지인 경우 애니메이션 시작
+  if (sender === 'Bot' && text === 'Generate...') {
+    startLoadingAnimation();
+  }
 }
 
 // 실시간으로 봇 메시지를 업데이트(마지막 메시지 덮어쓰기)
@@ -40,25 +52,94 @@ function updateBotMessage(text) {
     chatbox.appendChild(lastBotMsg);
   }
   lastBotMsg.innerHTML = `
-    <div class="sender">Bot</div>
-    <div class="text">${text.replace(/\n/g, '<br>')}</div>
+    <div class="sender">Castle Coder</div>
+    <div class="text markdown-body">${marked.parse(text)}</div>
   `;
   chatbox.scrollTop = chatbox.scrollHeight;
 }
 
-// Send 버튼 활성/비활성 함수 추가
-function setSendButtonEnabled(enabled) {
+// Send 버튼 활성/비활성 함수 수정
+function setSendButtonEnabled(enabled, isEndButton = false) {
   const btn = document.getElementById('send-btn');
   if (!btn) return;
+  
   btn.disabled = !enabled;
   if (enabled) {
-    btn.style.backgroundColor = '#22c55e'; // 원래 색상(초록)
-    btn.style.cursor = 'pointer';
-    btn.style.opacity = '1';
+    if (isEndButton) {
+      btn.textContent = 'Cancel';
+      btn.className = 'sharp-btn cancel-btn';
+      btn.style.cssText = `
+        background: #ef4444 !important;
+        background-image: none !important;
+        border-color: #ef4444 !important;
+        color: white !important;
+        padding: 8px 16px !important;
+        border-radius: 4px !important;
+        border: 1px solid !important;
+        font-weight: 500 !important;
+        cursor: pointer !important;
+        opacity: 1 !important;
+        box-shadow: none !important;
+      `;
+    } else {
+      btn.textContent = 'Send';
+      btn.className = 'sharp-btn';
+      btn.style.cssText = `
+        background-color: #22c55e !important;
+        border-color: #22c55e !important;
+        color: white !important;
+        padding: 8px 16px !important;
+        border-radius: 4px !important;
+        border: 1px solid !important;
+        font-weight: 500 !important;
+        cursor: pointer !important;
+        opacity: 1 !important;
+      `;
+    }
   } else {
-    btn.style.backgroundColor = '#888'; // 회색
-    btn.style.cursor = 'not-allowed';
-    btn.style.opacity = '0.7';
+    btn.className = 'sharp-btn disabled-btn';
+    btn.style.cssText = `
+      background-color: #888 !important;
+      border-color: #888 !important;
+      color: white !important;
+      padding: 8px 16px !important;
+      border-radius: 4px !important;
+      border: 1px solid !important;
+      font-weight: 500 !important;
+      cursor: not-allowed !important;
+      opacity: 0.7 !important;
+    `;
+  }
+}
+
+// 로딩 애니메이션을 위한 전역 변수
+let loadingAnimationInterval = null;
+
+// 로딩 애니메이션 함수
+function startLoadingAnimation() {
+  let dots = 0;
+  const maxDots = 3;
+  
+  // 기존 인터벌이 있다면 제거
+  if (loadingAnimationInterval) {
+    clearInterval(loadingAnimationInterval);
+  }
+  
+  loadingAnimationInterval = setInterval(() => {
+    dots = (dots + 1) % (maxDots + 1);
+    const loadingText = 'Generate' + '.'.repeat(dots);
+    const loadingMessage = document.querySelector('.chat-message.bot:last-child .text');
+    if (loadingMessage && loadingMessage.textContent.startsWith('Generate')) {
+      loadingMessage.textContent = loadingText;
+    }
+  }, 500);
+}
+
+// 로딩 애니메이션 정지 함수 추가
+function stopLoadingAnimation() {
+  if (loadingAnimationInterval) {
+    clearInterval(loadingAnimationInterval);
+    loadingAnimationInterval = null;
   }
 }
 
@@ -98,6 +179,169 @@ export function renderChatView(chatDataOrMessage) {
         </div>
       </div>
     </div>
+    <style>
+      .sharp-btn {
+        padding: 8px 16px;
+        border-radius: 4px;
+        border: 1px solid;
+        font-weight: 500;
+        transition: all 0.2s;
+        color: white;
+      }
+      .sharp-btn:not(.disabled-btn) {
+        background-color: #22c55e;
+        border-color: #22c55e;
+      }
+      .sharp-btn.cancel-btn {
+        background-color: #ef4444 !important;
+        border-color: #ef4444 !important;
+      }
+      .sharp-btn.disabled-btn {
+        background-color: #888;
+        border-color: #888;
+      }
+      .markdown-body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        font-size: 15px;
+        line-height: 1.6;
+        word-wrap: break-word;
+        color: #e4e4e7;
+      }
+      .markdown-body h1,
+      .markdown-body h2,
+      .markdown-body h3,
+      .markdown-body h4,
+      .markdown-body h5,
+      .markdown-body h6 {
+        margin-top: 24px;
+        margin-bottom: 16px;
+        font-weight: 600;
+        line-height: 1.25;
+        color: #f4f4f5;
+      }
+      .markdown-body h1 { font-size: 2em; border-bottom: 1px solid #3f3f46; padding-bottom: 0.3em; }
+      .markdown-body h2 { font-size: 1.5em; border-bottom: 1px solid #3f3f46; padding-bottom: 0.3em; }
+      .markdown-body h3 { font-size: 1.25em; }
+      .markdown-body h4 { font-size: 1em; }
+      .markdown-body h5 { font-size: 0.875em; }
+      .markdown-body h6 { font-size: 0.85em; color: #a1a1aa; }
+      
+      .markdown-body code {
+        background-color: rgba(63, 63, 70, 0.4);
+        border-radius: 4px;
+        font-size: 85%;
+        margin: 0;
+        padding: 0.2em 0.4em;
+        font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+      }
+      
+      .markdown-body pre {
+        background-color: #18181b;
+        border-radius: 6px;
+        font-size: 85%;
+        line-height: 1.45;
+        overflow: auto;
+        padding: 16px;
+        margin: 16px 0;
+        border: 1px solid #3f3f46;
+      }
+      
+      .markdown-body pre code {
+        background-color: transparent;
+        border: 0;
+        display: inline;
+        line-height: inherit;
+        margin: 0;
+        overflow: visible;
+        padding: 0;
+        word-wrap: normal;
+        color: #e4e4e7;
+      }
+      
+      .markdown-body blockquote {
+        margin: 0 0 16px;
+        padding: 0 1em;
+        color: #a1a1aa;
+        border-left: 0.25em solid #3f3f46;
+      }
+      
+      .markdown-body ul,
+      .markdown-body ol {
+        padding-left: 2em;
+        margin-top: 0;
+        margin-bottom: 16px;
+      }
+      
+      .markdown-body li {
+        margin: 0.25em 0;
+      }
+      
+      .markdown-body table {
+        border-collapse: collapse;
+        border-spacing: 0;
+        margin: 16px 0;
+        width: 100%;
+        overflow: auto;
+      }
+      
+      .markdown-body table th {
+        font-weight: 600;
+        background-color: #27272a;
+      }
+      
+      .markdown-body table th,
+      .markdown-body table td {
+        border: 1px solid #3f3f46;
+        padding: 8px 12px;
+      }
+      
+      .markdown-body table tr {
+        background-color: #18181b;
+        border-top: 1px solid #3f3f46;
+      }
+      
+      .markdown-body table tr:nth-child(2n) {
+        background-color: #27272a;
+      }
+      
+      .markdown-body hr {
+        height: 0.25em;
+        padding: 0;
+        margin: 24px 0;
+        background-color: #3f3f46;
+        border: 0;
+      }
+      
+      .markdown-body a {
+        color: #60a5fa;
+        text-decoration: none;
+      }
+      
+      .markdown-body a:hover {
+        text-decoration: underline;
+      }
+      
+      .markdown-body img {
+        max-width: 100%;
+        box-sizing: border-box;
+        border-radius: 4px;
+      }
+      
+      .markdown-body p {
+        margin-top: 0;
+        margin-bottom: 16px;
+      }
+      
+      .markdown-body strong {
+        font-weight: 600;
+        color: #f4f4f5;
+      }
+      
+      .markdown-body em {
+        font-style: italic;
+        color: #d4d4d8;
+      }
+    </style>
   `;
 
   // 로그아웃 링크 이벤트 리스너 추가
@@ -116,23 +360,29 @@ export function renderChatView(chatDataOrMessage) {
   // 세션 로드 시 messages 배열 처리
   if (chatDataOrMessage && Array.isArray(chatDataOrMessage.messages)) {
     if (chatDataOrMessage.messages.length === 0) {
-      addMessage('Bot', '이 채팅 세션에는 메시지가 없습니다.');
+      addMessage('Bot', 'No messages yet. Start a new conversation!');
+      setSendButtonEnabled(true, false);
     } else {
+      // 메시지를 원래 순서대로 출력
       chatDataOrMessage.messages.forEach(msg => {
-
-        if (msg.sender === 'Bot') {
-          // 중복 Bot 메시지면 추가하지 않음
-          return;
-        }
+        console.log('[ChatLog]', msg.createdAt, msg);
         addMessage(msg.sender || 'Bot', msg.text);
-        console.log('answer 4');
       });
+      // 메시지 로드 후 스크롤을 맨 아래로 이동
+      if (chatbox) {
+        chatbox.scrollTop = chatbox.scrollHeight;
+      }
     }
-    return;
+  } else if (typeof chatDataOrMessage === 'string' && chatDataOrMessage.trim() !== '') {
+    addMessage('You', chatDataOrMessage);
+    addMessage('Bot', 'Generate...');
+    startLoadingAnimation();
+    setSendButtonEnabled(true, true);
   }
 
-  if (typeof chatDataOrMessage === 'string' && chatDataOrMessage.trim() !== '') {
-    addMessage('You', chatDataOrMessage);
+  // chatSessionId 설정
+  if (chatDataOrMessage && chatDataOrMessage.chatSessionId) {
+    setChatSessionId(chatDataOrMessage.chatSessionId);
   }
 
   // 입력창 세팅
@@ -201,11 +451,21 @@ export function renderChatView(chatDataOrMessage) {
     btn.addEventListener('click', async () => {
       const msg = ta.value.trim();
       console.log('[Debug] Send button clicked:', msg);
+      
+      // Cancel 버튼인 경우 취소 처리
+      if (btn.textContent === 'Cancel') {
+        console.log('[Debug] Cancel button clicked');
+        cancelResponse();
+        return;
+      }
+      
       if (!msg) return;
       const imageUrls = attachedImages.map(img => img.imageUrl);
       // 질문을 보낼 때 바로 내 메시지를 추가
       addMessage('You', msg);
-      setSendButtonEnabled(false); // 추가: 전송 시 비활성화
+      addMessage('Bot', 'Generate...');
+
+      setSendButtonEnabled(true, true); // Cancel 버튼으로 변경
       handleSendMessage(msg, imageUrls);
       ta.value = '';
       autoResize(ta);
@@ -221,7 +481,25 @@ let llmBotBuffer = '';
 if (!window.__castleCoder_message_listener_registered) {
   window.addEventListener('message', ev => {
     if (ev.data.type === 'newChat') {
+      // 새로운 채팅 시작 시 버퍼 초기화
+      llmBotBuffer = '';
       renderStartView();
+      // 시작 버튼을 Cancel 버튼으로 변경
+      const startBtn = document.querySelector('.start-btn');
+      if (startBtn) {
+        startBtn.textContent = 'Cancel';
+        startBtn.style.cssText = `
+          background-color: #ef4444;
+          border-color: #ef4444;
+          color: white;
+          padding: 8px 16px;
+          border-radius: 4px;
+          border: 1px solid;
+          font-weight: 500;
+          cursor: pointer;
+          opacity: 1;
+        `;
+      }
     }
     if (ev.data.type === 'showSessionList') {
       renderSessionListOverlay();
@@ -230,18 +508,59 @@ if (!window.__castleCoder_message_listener_registered) {
       const data = ev.data.data;
       console.log('[Debug] llm-chat-response:', data);
 
+      // 취소된 경우 취소 메시지로 변경하고 더 이상의 토큰 처리 중단
+      if (data.cancelled) {
+        const lastBotMessage = document.querySelector('.chat-message.bot:last-child');
+        if (lastBotMessage) {
+          lastBotMessage.innerHTML = `
+            <div class="sender">Castle Coder</div>
+            <div class="text">응답이 취소되었습니다.</div>
+          `;
+        }
+        return;
+      }
+
       if (data.type === 'token' && data.content !== undefined) {
+        // 새로운 토큰이 시작될 때 이전 응답 제거
+        if (llmBotBuffer === '') {
+          const lastBotMessage = document.querySelector('.chat-message.bot:last-child');
+          if (lastBotMessage) {
+            lastBotMessage.remove();
+          }
+        }
+        
         llmBotBuffer += data.content;
         console.log('[Debug] Token received:', data.content, '| Current buffer:', llmBotBuffer);
         updateBotMessage(llmBotBuffer);
       }
-      if (data.type === 'end') {
-        if (llmBotBuffer.trim() !== '') {
+    }
+    if (ev.data.type === 'llm-chat-end') {
+      console.log('llmbotbuffer:',llmBotBuffer);
+      const data = ev.data.data;
+      
+      // 취소된 경우 취소 메시지로 변경
+      if (data.cancelled) {
+        const lastBotMessage = document.querySelector('.chat-message.bot:last-child');
+        if (lastBotMessage) {
+          lastBotMessage.innerHTML = `
+            <div class="sender">Castle Coder</div>
+            <div class="text">응답이 취소되었습니다.</div>
+          `;
         }
-        llmBotBuffer = '';
-        setSendButtonEnabled(true); // 추가: 응답 완료 시 활성화
+      } else {
+        // 세션 log(메시지) 갱신
+        const sessionId = getChatSessionId && getChatSessionId();
+        if (sessionId) {
+          loadChatSession(sessionId).then(chatData => {
+            renderChatView(chatData);
+          });
+        }
       }
-      return;
+      
+      llmBotBuffer = '';
+      if (llmBotBuffer.trim() !== '') {
+        stopLoadingAnimation();
+      }
     }
     if (ev.data.type === 'llm-chat-error') {
       console.log('[Debug] llm-chat-error:', ev.data.error);
@@ -257,6 +576,67 @@ if (!window.__castleCoder_message_listener_registered) {
         chatbox.scrollTop = chatbox.scrollHeight;
       }
     }
+    if (ev.data.type === 'update-button-state') {
+      setSendButtonEnabled(true, ev.data.data.isEndButton);
+    }
+    if (ev.data.type === 'llm-cancel-response') {
+      console.log('[Debug] Cancel response:', ev.data.data);
+      // 취소 성공 시 현재 메시지를 취소 메시지로 변경
+      const lastBotMessage = document.querySelector('.chat-message.bot:last-child');
+      if (lastBotMessage) {
+        lastBotMessage.innerHTML = `
+          <div class="sender">Castle Coder</div>
+          <div class="text">cancelled.</div>
+        `;
+      }
+      // 버퍼 초기화
+      llmBotBuffer = '';
+      // 애니메이션 중지
+      stopLoadingAnimation();
+      // Send 버튼으로 변경
+      setSendButtonEnabled(true, false);
+    }
+    if (ev.data.type === 'llm-cancel-error') {
+      console.error('[Debug] Cancel error:', ev.data.error);
+      // 취소 실패 시 에러 메시지 표시
+      const lastBotMessage = document.querySelector('.chat-message.bot:last-child');
+      if (lastBotMessage) {
+        lastBotMessage.innerHTML = `
+          <div class="sender">Castle Coder</div>
+          <div class="text">[Error] 취소 요청 실패: ${ev.data.error}</div>
+        `;
+      }
+      // Send 버튼으로 변경
+      setSendButtonEnabled(true, false);
+    }
   });
   window.__castleCoder_message_listener_registered = true;
+}
+
+// 응답 취소 함수
+function cancelResponse() {
+  const chatSessionId = getChatSessionId();
+  
+  if (!chatSessionId) {
+    console.error('[Debug] No chatSessionId found');
+    return;
+  }
+  
+  // 즉시 Send 버튼으로 변경
+  setSendButtonEnabled(true, false);
+  
+  // 로딩 메시지 제거
+  const loadingMessage = document.querySelector('.chat-message.bot:last-child');
+  if (loadingMessage && loadingMessage.textContent.includes('Generate')) {
+    loadingMessage.remove();
+  }
+  
+  // 애니메이션 중지
+  stopLoadingAnimation();
+  
+  // 취소 API 호출
+  cancelLLMResponse(chatSessionId);
+  
+  // 취소 메시지 추가
+  addMessage('Bot', '응답이 취소되었습니다.');
 }
