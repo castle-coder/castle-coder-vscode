@@ -10,9 +10,31 @@ import { cancelResponse as cancelLLMResponse } from './connect/codeGenerate.js';
 import { marked } from 'https://cdn.jsdelivr.net/npm/marked@4.3.0/lib/marked.esm.js';
 import { requestUpdateSessionTitle } from './session/sessionApi.js';
 
-// 간단한 syntax highlighting 함수
+// 강화된 syntax highlighting 함수
 function highlightCode(code, language) {
-  if (!language) language = 'javascript';
+  // 언어 이름 정규화 (대소문자 구분 없이, 별칭 처리)
+  const normalizeLanguage = (lang) => {
+    if (!lang) return 'text';
+    const normalized = lang.toLowerCase().trim();
+    
+    // 언어 별칭 처리
+    const aliases = {
+      'js': 'javascript',
+      'ts': 'typescript',
+      'py': 'python',
+      'rb': 'ruby',
+      'sh': 'bash',
+      'shell': 'bash',
+      'yml': 'yaml',
+      'md': 'markdown',
+      'c++': 'cpp',
+      'c#': 'csharp'
+    };
+    
+    return aliases[normalized] || normalized;
+  };
+  
+  language = normalizeLanguage(language);
   
   // HTML 특수문자 이스케이프
   let highlightedCode = code
@@ -22,31 +44,69 @@ function highlightCode(code, language) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#x27;');
 
-  // 언어별 패턴 정의
+  // 언어별 패턴 정의 (확장됨)
   const patterns = {
     javascript: {
-      keywords: ['function', 'const', 'let', 'var', 'if', 'else', 'for', 'while', 'return', 'class', 'extends', 'import', 'export', 'from', 'async', 'await', 'try', 'catch', 'finally', 'throw', 'new', 'this', 'super', 'static', 'public', 'private', 'protected'],
+      keywords: ['function', 'const', 'let', 'var', 'if', 'else', 'else if', 'for', 'while', 'do', 'switch', 'case', 'default', 'break', 'continue', 'return', 'class', 'extends', 'constructor', 'import', 'export', 'from', 'as', 'async', 'await', 'try', 'catch', 'finally', 'throw', 'new', 'this', 'super', 'static', 'public', 'private', 'protected', 'typeof', 'instanceof', 'delete', 'void', 'null', 'undefined', 'true', 'false'],
+      comments: [/\/\*[\s\S]*?\*\//g, /\/\/.*$/gm],
+      strings: [/&quot;[^&]*?&quot;/g, /&#x27;[^&]*?&#x27;/g, /`[^`]*?`/g]
+    },
+    typescript: {
+      keywords: ['function', 'const', 'let', 'var', 'if', 'else', 'for', 'while', 'return', 'class', 'extends', 'import', 'export', 'from', 'async', 'await', 'try', 'catch', 'finally', 'throw', 'new', 'this', 'super', 'static', 'public', 'private', 'protected', 'interface', 'type', 'enum', 'namespace', 'declare', 'readonly', 'abstract', 'implements', 'keyof', 'infer', 'string', 'number', 'boolean', 'any', 'void', 'never', 'unknown'],
       comments: [/\/\*[\s\S]*?\*\//g, /\/\/.*$/gm],
       strings: [/&quot;[^&]*?&quot;/g, /&#x27;[^&]*?&#x27;/g, /`[^`]*?`/g]
     },
     python: {
-      keywords: ['def', 'class', 'if', 'elif', 'else', 'for', 'while', 'return', 'import', 'from', 'as', 'try', 'except', 'finally', 'raise', 'with', 'async', 'await', 'lambda', 'and', 'or', 'not', 'in', 'is', 'True', 'False', 'None'],
+      keywords: ['def', 'class', 'if', 'elif', 'else', 'for', 'while', 'return', 'import', 'from', 'as', 'try', 'except', 'finally', 'raise', 'with', 'async', 'await', 'lambda', 'and', 'or', 'not', 'in', 'is', 'True', 'False', 'None', 'pass', 'break', 'continue', 'global', 'nonlocal', 'assert', 'del', 'yield'],
       comments: [/#.*$/gm],
       strings: [/&quot;[^&]*?&quot;/g, /&#x27;[^&]*?&#x27;/g, /&quot;&quot;&quot;[\s\S]*?&quot;&quot;&quot;/g, /&#x27;&#x27;&#x27;[\s\S]*?&#x27;&#x27;&#x27;/g]
     },
     html: {
-      keywords: ['html', 'head', 'body', 'div', 'span', 'p', 'a', 'img', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'meta', 'link', 'script', 'style'],
+      keywords: ['html', 'head', 'body', 'div', 'span', 'p', 'a', 'img', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'meta', 'link', 'script', 'style', 'section', 'article', 'aside', 'nav', 'header', 'footer', 'main', 'figure', 'figcaption', 'time', 'mark', 'summary', 'details'],
       comments: [/&lt;!--[\s\S]*?--&gt;/g],
-      strings: [/&quot;[^&]*?&quot;/g, /&#x27;[^&]*?&#x27;/g]
+      strings: [/&quot;[^&]*?&quot;/g, /&#x27;[^&]*?&#x27;/g],
+      attributes: /(\w+)(?=\s*=)/g
     },
     css: {
-      keywords: ['color', 'background', 'margin', 'padding', 'border', 'width', 'height', 'display', 'position', 'top', 'left', 'right', 'bottom', 'font', 'text', 'line-height', 'z-index', 'opacity', 'transform', 'transition'],
+      keywords: ['color', 'background', 'background-color', 'background-image', 'margin', 'padding', 'border', 'width', 'height', 'display', 'position', 'top', 'left', 'right', 'bottom', 'font', 'font-size', 'font-family', 'font-weight', 'text-align', 'text-decoration', 'line-height', 'z-index', 'opacity', 'transform', 'transition', 'animation', 'flex', 'grid', 'justify-content', 'align-items'],
       comments: [/\/\*[\s\S]*?\*\//g],
+      strings: [/&quot;[^&]*?&quot;/g, /&#x27;[^&]*?&#x27;/g],
+      selectors: /([.#]?[\w-]+)\s*(?=\{)/g,
+      properties: /(\w+(?:-\w+)*)\s*(?=:)/g
+    },
+    java: {
+      keywords: ['public', 'private', 'protected', 'static', 'final', 'abstract', 'class', 'interface', 'extends', 'implements', 'import', 'package', 'if', 'else', 'for', 'while', 'do', 'switch', 'case', 'default', 'break', 'continue', 'return', 'try', 'catch', 'finally', 'throw', 'throws', 'new', 'this', 'super', 'null', 'true', 'false', 'void', 'int', 'double', 'float', 'long', 'short', 'byte', 'char', 'boolean', 'String'],
+      comments: [/\/\*[\s\S]*?\*\//g, /\/\/.*$/gm],
       strings: [/&quot;[^&]*?&quot;/g, /&#x27;[^&]*?&#x27;/g]
+    },
+    cpp: {
+      keywords: ['include', 'using', 'namespace', 'class', 'struct', 'public', 'private', 'protected', 'virtual', 'static', 'const', 'if', 'else', 'for', 'while', 'do', 'switch', 'case', 'default', 'break', 'continue', 'return', 'try', 'catch', 'throw', 'new', 'delete', 'this', 'nullptr', 'true', 'false', 'void', 'int', 'double', 'float', 'long', 'short', 'char', 'bool', 'string'],
+      comments: [/\/\*[\s\S]*?\*\//g, /\/\/.*$/gm],
+      strings: [/&quot;[^&]*?&quot;/g, /&#x27;[^&]*?&#x27;/g]
+    },
+    json: {
+      keywords: ['true', 'false', 'null'],
+      comments: [],
+      strings: [/&quot;[^&]*?&quot;/g]
+    },
+    bash: {
+      keywords: ['if', 'then', 'else', 'elif', 'fi', 'for', 'do', 'done', 'while', 'case', 'esac', 'function', 'return', 'exit', 'export', 'source', 'echo', 'printf', 'read', 'cd', 'pwd', 'ls', 'grep', 'find', 'sort', 'uniq', 'head', 'tail', 'cat', 'less', 'more'],
+      comments: [/#.*$/gm],
+      strings: [/&quot;[^&]*?&quot;/g, /&#x27;[^&]*?&#x27;/g]
+    },
+    sql: {
+      keywords: ['SELECT', 'FROM', 'WHERE', 'JOIN', 'INNER', 'LEFT', 'RIGHT', 'FULL', 'ON', 'GROUP', 'BY', 'HAVING', 'ORDER', 'ASC', 'DESC', 'INSERT', 'INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE', 'CREATE', 'TABLE', 'ALTER', 'DROP', 'INDEX', 'VIEW', 'DATABASE', 'SCHEMA', 'GRANT', 'REVOKE', 'COMMIT', 'ROLLBACK', 'TRANSACTION', 'AND', 'OR', 'NOT', 'NULL', 'IS', 'LIKE', 'IN', 'EXISTS', 'BETWEEN', 'CASE', 'WHEN', 'THEN', 'ELSE', 'END'],
+      comments: [/--.*$/gm, /\/\*[\s\S]*?\*\//g],
+      strings: [/&quot;[^&]*?&quot;/g, /&#x27;[^&]*?&#x27;/g]
+    },
+    text: {
+      keywords: [],
+      comments: [],
+      strings: []
     }
   };
 
-  const langPatterns = patterns[language] || patterns.javascript;
+  const langPatterns = patterns[language] || patterns.text;
   
   // 임시 플래그를 사용하여 하이라이팅된 부분 표시
   const FLAG_START = '___HIGHLIGHT_START___';
@@ -125,6 +185,23 @@ function highlightCode(code, language) {
   fParts.push(highlightedCode.substring(fLastIndex));
   highlightedCode = fParts.join('');
 
+  // 6. 언어별 특별한 패턴 처리
+  if (language === 'html' && langPatterns.attributes) {
+    // HTML 속성 하이라이팅
+    highlightedCode = highlightedCode.replace(langPatterns.attributes, `${FLAG_START}attribute${FLAG_END}$1${FLAG_START}/attribute${FLAG_END}`);
+  }
+  
+  if (language === 'css') {
+    // CSS 선택자 하이라이팅
+    if (langPatterns.selectors) {
+      highlightedCode = highlightedCode.replace(langPatterns.selectors, `${FLAG_START}selector${FLAG_END}$1${FLAG_START}/selector${FLAG_END}`);
+    }
+    // CSS 속성 하이라이팅
+    if (langPatterns.properties) {
+      highlightedCode = highlightedCode.replace(langPatterns.properties, `${FLAG_START}property${FLAG_END}$1${FLAG_START}/property${FLAG_END}`);
+    }
+  }
+
   // 플래그를 실제 HTML 태그로 변환
   highlightedCode = highlightedCode
     .replace(new RegExp(`${FLAG_START}comment${FLAG_END}`, 'g'), '<span class="code-comment">')
@@ -136,7 +213,13 @@ function highlightCode(code, language) {
     .replace(new RegExp(`${FLAG_START}keyword${FLAG_END}`, 'g'), '<span class="code-keyword">')
     .replace(new RegExp(`${FLAG_START}/keyword${FLAG_END}`, 'g'), '</span>')
     .replace(new RegExp(`${FLAG_START}function${FLAG_END}`, 'g'), '<span class="code-function">')
-    .replace(new RegExp(`${FLAG_START}/function${FLAG_END}`, 'g'), '</span>');
+    .replace(new RegExp(`${FLAG_START}/function${FLAG_END}`, 'g'), '</span>')
+    .replace(new RegExp(`${FLAG_START}attribute${FLAG_END}`, 'g'), '<span class="code-attribute">')
+    .replace(new RegExp(`${FLAG_START}/attribute${FLAG_END}`, 'g'), '</span>')
+    .replace(new RegExp(`${FLAG_START}selector${FLAG_END}`, 'g'), '<span class="code-selector">')
+    .replace(new RegExp(`${FLAG_START}/selector${FLAG_END}`, 'g'), '</span>')
+    .replace(new RegExp(`${FLAG_START}property${FLAG_END}`, 'g'), '<span class="code-property">')
+    .replace(new RegExp(`${FLAG_START}/property${FLAG_END}`, 'g'), '</span>');
 
   return highlightedCode;
 }
@@ -797,6 +880,21 @@ export function renderChatView(chatDataOrMessage) {
       
       .markdown-body .code-type {
         color: #7ee787;
+      }
+      
+      .markdown-body .code-attribute {
+        color: #79c0ff;
+        font-weight: 500;
+      }
+      
+      .markdown-body .code-selector {
+        color: #7ee787;
+        font-weight: 600;
+      }
+      
+      .markdown-body .code-property {
+        color: #ff7b72;
+        font-weight: 500;
       }
       
       .markdown-body blockquote {
