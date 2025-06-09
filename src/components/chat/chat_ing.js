@@ -460,7 +460,7 @@ function updateBotMessage(text) {
     }, 300);
   }
   
-  chatbox.scrollTop = chatbox.scrollHeight;
+  // 스트리밍 중에는 스크롤 업데이트 하지 않음
 }
 
 // Send 버튼 활성/비활성 함수 수정
@@ -1247,6 +1247,12 @@ if (!window.__castleCoder_message_listener_registered) {
             renderChatView(chatData);
           });
         }
+      }
+      
+      // 응답 완료 후 스크롤을 맨 아래로 이동
+      const chatbox = document.getElementById('chatbox');
+      if (chatbox) {
+        chatbox.scrollTop = chatbox.scrollHeight;
       }
       
       // 모든 변수 초기화

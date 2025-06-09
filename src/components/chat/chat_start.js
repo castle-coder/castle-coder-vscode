@@ -7,6 +7,7 @@ import { renderSessionList, renderSessionListOverlay } from '../chat/session/cha
 import { uploadImage } from './imageUrl/imageUpload.js';
 import { deleteImage } from './imageUrl/imageDelete.js';
 import { sendLLMChatMessage, sendLLMChatMessageWithImage } from './connect/codeGenerate.js';
+import { vscode } from '../api/vscodeApi.js';
 
 // textarea 자동 높이 조절
 function autoResize(textarea) {
@@ -34,6 +35,9 @@ export function renderStartView() {
   memberApp.style.display = 'none';
   startApp.style.display  = 'flex';
   chatApp.style.display   = 'none';
+
+  // 프로필 정보 조회 API 호출
+  vscode.postMessage({ type: 'getProfile' });
 
   startApp.innerHTML = `
     <style>
@@ -218,7 +222,7 @@ export function renderStartView() {
   renderSessionList();
 }
 
-// 웹뷰 메시지 리스너: newChat, userPrompt, showSessionList 처리
+// 웹뷰 메시지 리스너: newChat, userPrompt, showSessionList, profileResponse 처리
 window.addEventListener('message', ev => {
   const { type, prompt } = ev.data;
   if (type === 'newChat') {
@@ -230,4 +234,21 @@ window.addEventListener('message', ev => {
   if (type === 'showSessionList') {
     renderSessionListOverlay();
   }
+  if (type === 'profileResponse') {
+    handleProfileResponse(ev.data);
+  }
 });
+
+// 프로필 응답 처리 함수
+function handleProfileResponse(data) {
+  if (data.success) {
+    // 성공: userId가 MessageHandler에서 이미 setUserId로 저장됨
+    console.log('[Profile] 프로필 조회 성공, userId 저장됨');
+  } else {
+    // 실패: 로그인 화면으로 이동
+    console.error('[Profile] 프로필 조회 실패:', data.error);
+    
+    // 로그인 화면으로 이동
+    logout();
+  }
+}

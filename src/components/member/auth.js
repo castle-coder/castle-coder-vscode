@@ -104,9 +104,22 @@ window.addEventListener('message', (e) => {
     // 회원가입 response
     case 'signupResponse':
       if (msg.success) {
-        // 가입 성공
-        document.getElementById('reg-error').style.color = 'limegreen'
-        document.getElementById('reg-error').textContent = '회원가입 완료! 로그인해주세요.'
+        // 가입 성공 - 로그인 화면으로 이동
+        import('./login.js').then(({ renderLoginView }) => {
+          renderLoginView();
+          // 성공 메시지를 로그인 화면에 표시
+          setTimeout(() => {
+            const loginError = document.getElementById('login-error');
+            if (loginError) {
+              loginError.style.color = 'limegreen';
+              loginError.textContent = '회원가입 완료! 로그인해주세요.';
+              // 3초 후 메시지 제거
+              setTimeout(() => {
+                loginError.textContent = '';
+              }, 3000);
+            }
+          }, 100);
+        });
       } else {
         document.getElementById('reg-error').style.color = '#ff6b6b'
         document.getElementById('reg-error').textContent = msg.error

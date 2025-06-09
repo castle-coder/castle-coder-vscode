@@ -34,6 +34,10 @@ export class MessageHandler {
         await vscode.commands.executeCommand('setContext', 'castleCoder:isLoggedIn', false);
         break;
 
+      case 'getProfile':
+        await this.handleGetProfile();
+        break;
+
       default:
         break;
     }
@@ -149,6 +153,69 @@ export class MessageHandler {
       }
       this.view.webview.postMessage({
         type: 'signupError',
+        success: false,
+        error: errMsg,
+      });
+    }
+  }
+
+  private async handleGetProfile() {
+    try {
+      // accessToken이 없으면 auth.ts에서 가져오기
+      if (!this.accessToken) {
+        const { getAccessToken } = await import('../auth');
+        this.accessToken = getAccessToken();
+      }
+      
+      if (!this.accessToken) {
+        throw new Error('로그인이 필요합니다.');
+      }
+
+      const res = await axios.get(
+        `${this.baseUrl}/member/profiles`,
+        {
+          headers: {
+            'Authorization': `Bearer ${this.accessToken}`
+          }
+        }
+      );
+
+      // 응답 코드가 200이면 성공
+      if (res.status === 200 && res.data?.code === 200) {
+        // userId 저장
+        const profileData = res.data.data;
+        if (profileData && profileData.id) {
+          setUserId(profileData.id.toString());
+        }
+        
+        this.view.webview.postMessage({
+          type: 'profileResponse',
+          success: true,
+          data: res.data.data,
+        });
+      } else {
+        // 200이 아니면 실패로 처리
+        this.view.webview.postMessage({
+          type: 'profileResponse',
+          success: false,
+          error: res.data?.message || '프로필 조회에 실패했습니다.',
+        });
+      }
+    } catch (err: unknown) {
+      let errMsg = '프로필 조회 중 오류가 발생했습니다.';
+      if (isAxiosError(err)) {
+        // 401, 403 등 인증 오류 시
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          errMsg = '인증이 만료되었습니다. 다시 로그인해주세요.';
+        } else {
+          errMsg = err.response?.data?.message ?? err.message;
+        }
+      } else if (err instanceof Error) {
+        errMsg = err.message;
+      }
+      
+      this.view.webview.postMessage({
+        type: 'profileResponse',
         success: false,
         error: errMsg,
       });
