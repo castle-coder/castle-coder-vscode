@@ -136,17 +136,30 @@ window.addEventListener('message', (e) => {
     case 'checkEmailResult':
       // { success: boolean, available?: boolean, error?: string }
       const fb = document.getElementById('reg-error')
+      
       if (msg.success) {
         if (msg.available) {
           fb.style.color = 'limegreen'
           fb.textContent = '사용 가능한 이메일입니다.'
+          // 사용 가능한 이메일인 경우 체크 상태로 변경
+          if (window.setEmailChecked) {
+            window.setEmailChecked(true)
+          }
         } else {
           fb.style.color = '#ff6b6b'
           fb.textContent = '이미 등록된 이메일입니다.'
+          // 중복된 이메일인 경우 체크 해제
+          if (window.setEmailChecked) {
+            window.setEmailChecked(false)
+          }
         }
       } else {
         fb.style.color = '#ff6b6b'
         fb.textContent = msg.error
+        // 에러인 경우 체크 해제
+        if (window.setEmailChecked) {
+          window.setEmailChecked(false)
+        }
       }
       break
 
