@@ -108,6 +108,9 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
       vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'chat', 'connect', 'securityRefactoring.js')
     );
 
+    // 캐슬 이미지 URI 추가
+    const castleImageUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'castle.png'));
+
     const cspMeta = `
       <meta http-equiv="Content-Security-Policy"
         content="
@@ -132,6 +135,13 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
   <link href="${loginStyleUri}" rel="stylesheet" />
   <link href="${chatStartStyleUri}" rel="stylesheet" />
   <link href="${chatIngStyleUri}" rel="stylesheet" />
+  
+  <!-- 캐슬 이미지 CSS 변수 설정 -->
+  <style>
+    :root {
+      --castle-image-url: url('${castleImageUri}');
+    }
+  </style>
 </head>
 <body>
 

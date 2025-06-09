@@ -4,7 +4,35 @@ html, body, #app, #chat-start-app {
 #chat-start-app .start-container {
   display:flex; flex-direction:column; justify-content:space-between;
   height:100%; background:#1e1e1e; padding:24px 16px; box-sizing:border-box;
+  position: relative;
 }
+
+/* 캐슬 배경 이미지 - 흐릿하게 */
+#chat-start-app .start-container::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  height: 300px;
+  background-image: var(--castle-image-url);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.12;
+  filter: blur(1px) invert(1) brightness(0.3) contrast(1.2);
+  mix-blend-mode: screen;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 컨텐츠가 배경 이미지 위에 나타나도록 */
+#chat-start-app .start-container > * {
+  position: relative;
+  z-index: 1;
+}
+
 #chat-start-app .start-container .start-header {
   text-align:center;
 }

@@ -31,13 +31,23 @@ export function renderStartView() {
   startApp.innerHTML = `
     <div class="start-container" style="width: 100%; box-sizing: border-box;">
       <!-- <div id="session-list" style="margin-bottom: 16px;"></div> -->
-      <div class="title-row" style="display: flex; justify-content: flex-start; align-items: center; margin-bottom: 24px; width: 100%;">
-        <input type="text" id="chat-title" placeholder="제목 입력" 
-          style="height: 32px; font-size: 18px; padding: 4px 12px; flex: 1 1 0; min-width: 0; width: 100%; box-sizing: border-box; background: #232323; color: #fff; border: none; border-radius: 6px; outline: none; transition: background 0.2s; ::placeholder{color:#aaa;}"/>
-      </div>
-      <div class="start-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; width: 100%;">
+      <div class="start-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; width: 100%;">
         <h1 style="margin:0; font-size: 2rem; letter-spacing: -2px;">Ask Castle Coder</h1>
         <a href="#" id="chat-start-logout" class="text-link" style="font-size: 1.2rem; color: #888;">Logout</a>
+      </div>
+      <div class="description-section" style="margin-bottom: 32px; text-align: center;">
+        <p style="margin: 0 0 16px 0; font-size: 16px; color: #e0e0e0; line-height: 1.5; font-weight: 500;">
+          Your AI Assistant for Secure & Efficient Code Development
+        </p>
+        <p style="margin: 0 0 8px 0; font-size: 14px; color: #bbb; line-height: 1.4;">
+          Get expert help with code reviews, security vulnerability analysis, refactoring, and optimization
+        </p>
+        <p style="margin: 0; font-size: 13px; color: #999; line-height: 1.3;">
+          Smart code suggestions 
+          • Security-first approach 
+          • Performance optimization 
+          • Best practices guidance
+        </p>
       </div>
       <div class="chat-input-area">
         <div class="input-row">
@@ -75,12 +85,11 @@ export function renderStartView() {
   if (btn && ta) {
     btn.addEventListener('click', async () => {
       const msg = ta.value.trim();
-      const chatTitle = document.getElementById('chat-title').value.trim();
       let { sessionId, title } = getSession();
       if (msg) {
         if (!sessionId) {
-          // 세션이 없을 때만 생성
-          const sessionData = await createSession(chatTitle);
+          // 세션이 없을 때만 생성 (기본 제목 사용)
+          const sessionData = await createSession('새 채팅 세션');
           console.log('[Debug] createSession response:', sessionData);
           // 실제 구조에 맞게 chatSessionId 추출
           sessionId = sessionData.chatSessionId || sessionData.sessionId || sessionData.id || (sessionData.data && (sessionData.data.chatSessionId || sessionData.data.sessionId || sessionData.data.id));
@@ -88,7 +97,7 @@ export function renderStartView() {
             console.log('[Debug] 세션 ID 추출 실패');
             return;
           }
-          setSession(sessionId, chatTitle);
+          setSession(sessionId, '새 채팅 세션');
           // 콜백 등록만 하고 setChatSessionId는 호출하지 않음
           onSessionReady(() => {
             handleStartChat(msg, attachedImages.map(img => img.imageUrl));
@@ -106,62 +115,6 @@ export function renderStartView() {
         }
       }
     });
-  }
-
-  // 제목 입력란 엔터 입력 시 blur 처리 (입력 완료)
-  const titleInput = document.getElementById('chat-title');
-  if (titleInput) {
-    titleInput.addEventListener('keydown', async (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        titleInput.blur();
-        const title = titleInput.value.trim();
-        let { sessionId } = getSession();
-        if (!title) return;
-        if (!sessionId) {
-          sessionId = await createSession(title);
-          setSession(sessionId, title);
-        } else {
-          await updateSessionTitle(sessionId, title);
-          setSession(sessionId, title);
-        }
-      }
-    });
-
-    // 제목 입력란 자동 너비 조절
-    const ghostSpan = document.createElement('span');
-    ghostSpan.style.visibility = 'hidden';
-    ghostSpan.style.position = 'absolute';
-    ghostSpan.style.whiteSpace = 'pre';
-    // input 스타일과 완전히 동일하게 복사
-    const inputStyle = window.getComputedStyle(titleInput);
-    ghostSpan.style.fontSize = inputStyle.fontSize;
-    ghostSpan.style.fontFamily = inputStyle.fontFamily;
-    ghostSpan.style.fontWeight = inputStyle.fontWeight;
-    ghostSpan.style.letterSpacing = inputStyle.letterSpacing;
-    ghostSpan.style.padding = inputStyle.padding;
-    ghostSpan.style.border = inputStyle.border;
-    ghostSpan.style.borderRadius = inputStyle.borderRadius;
-    ghostSpan.style.boxSizing = inputStyle.boxSizing;
-    ghostSpan.style.lineHeight = inputStyle.lineHeight;
-    ghostSpan.style.background = inputStyle.background;
-    ghostSpan.style.color = inputStyle.color;
-    document.body.appendChild(ghostSpan);
-
-    function updateInputWidth() {
-      ghostSpan.textContent = titleInput.value || titleInput.placeholder || '';
-      // 최소/최대 너비 설정
-      const minWidth = 32; // px
-      const maxWidth = 400; // px
-      const width = Math.min(Math.max(ghostSpan.offsetWidth, minWidth), maxWidth);
-      titleInput.style.width = width + 'px';
-    }
-
-    // 초기화 및 이벤트 연결
-    updateInputWidth();
-    titleInput.addEventListener('input', updateInputWidth);
-    titleInput.addEventListener('change', updateInputWidth);
-    titleInput.addEventListener('blur', updateInputWidth);
   }
 
   // 첨부 이미지 리스트 (imageUrl, fileName)
