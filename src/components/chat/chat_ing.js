@@ -9,6 +9,145 @@ import { loadChatSession } from '../chat/session/sessionLoad.js';
 import { cancelResponse as cancelLLMResponse } from './connect/codeGenerate.js';
 import { marked } from 'https://cdn.jsdelivr.net/npm/marked@4.3.0/lib/marked.esm.js';
 
+// 간단한 syntax highlighting 함수
+function highlightCode(code, language) {
+  if (!language) language = 'javascript';
+  
+  // HTML 특수문자 이스케이프
+  let highlightedCode = code
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+
+  // 언어별 패턴 정의
+  const patterns = {
+    javascript: {
+      keywords: ['function', 'const', 'let', 'var', 'if', 'else', 'for', 'while', 'return', 'class', 'extends', 'import', 'export', 'from', 'async', 'await', 'try', 'catch', 'finally', 'throw', 'new', 'this', 'super', 'static', 'public', 'private', 'protected'],
+      comments: [/\/\*[\s\S]*?\*\//g, /\/\/.*$/gm],
+      strings: [/&quot;[^&]*?&quot;/g, /&#x27;[^&]*?&#x27;/g, /`[^`]*?`/g]
+    },
+    python: {
+      keywords: ['def', 'class', 'if', 'elif', 'else', 'for', 'while', 'return', 'import', 'from', 'as', 'try', 'except', 'finally', 'raise', 'with', 'async', 'await', 'lambda', 'and', 'or', 'not', 'in', 'is', 'True', 'False', 'None'],
+      comments: [/#.*$/gm],
+      strings: [/&quot;[^&]*?&quot;/g, /&#x27;[^&]*?&#x27;/g, /&quot;&quot;&quot;[\s\S]*?&quot;&quot;&quot;/g, /&#x27;&#x27;&#x27;[\s\S]*?&#x27;&#x27;&#x27;/g]
+    },
+    html: {
+      keywords: ['html', 'head', 'body', 'div', 'span', 'p', 'a', 'img', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'meta', 'link', 'script', 'style'],
+      comments: [/&lt;!--[\s\S]*?--&gt;/g],
+      strings: [/&quot;[^&]*?&quot;/g, /&#x27;[^&]*?&#x27;/g]
+    },
+    css: {
+      keywords: ['color', 'background', 'margin', 'padding', 'border', 'width', 'height', 'display', 'position', 'top', 'left', 'right', 'bottom', 'font', 'text', 'line-height', 'z-index', 'opacity', 'transform', 'transition'],
+      comments: [/\/\*[\s\S]*?\*\//g],
+      strings: [/&quot;[^&]*?&quot;/g, /&#x27;[^&]*?&#x27;/g]
+    }
+  };
+
+  const langPatterns = patterns[language] || patterns.javascript;
+  
+  // 임시 플래그를 사용하여 하이라이팅된 부분 표시
+  const FLAG_START = '___HIGHLIGHT_START___';
+  const FLAG_END = '___HIGHLIGHT_END___';
+  
+  // 1. 주석 하이라이팅
+  if (langPatterns.comments) {
+    langPatterns.comments.forEach(commentPattern => {
+      highlightedCode = highlightedCode.replace(commentPattern, `${FLAG_START}comment${FLAG_END}$&${FLAG_START}/comment${FLAG_END}`);
+    });
+  }
+
+  // 2. 문자열 하이라이팅
+  if (langPatterns.strings) {
+    langPatterns.strings.forEach(stringPattern => {
+      highlightedCode = highlightedCode.replace(stringPattern, `${FLAG_START}string${FLAG_END}$&${FLAG_START}/string${FLAG_END}`);
+    });
+  }
+
+  // 3. 숫자 하이라이팅 (플래그로 보호된 영역 제외)
+  const numberRegex = /\b\d+(?:\.\d+)?\b/g;
+  let match;
+  let parts = [];
+  let lastIndex = 0;
+  
+  while ((match = numberRegex.exec(highlightedCode)) !== null) {
+    const beforeMatch = highlightedCode.substring(lastIndex, match.index);
+    if (!beforeMatch.includes(FLAG_START) || beforeMatch.lastIndexOf(FLAG_END) > beforeMatch.lastIndexOf(FLAG_START)) {
+      parts.push(beforeMatch);
+      parts.push(`${FLAG_START}number${FLAG_END}${match[0]}${FLAG_START}/number${FLAG_END}`);
+    } else {
+      parts.push(beforeMatch + match[0]);
+    }
+    lastIndex = numberRegex.lastIndex;
+  }
+  parts.push(highlightedCode.substring(lastIndex));
+  highlightedCode = parts.join('');
+
+  // 4. 키워드 하이라이팅
+  langPatterns.keywords.forEach(keyword => {
+    const keywordRegex = new RegExp(`\\b${keyword}\\b`, 'g');
+    let match;
+    let parts = [];
+    let lastIndex = 0;
+    
+    while ((match = keywordRegex.exec(highlightedCode)) !== null) {
+      const beforeMatch = highlightedCode.substring(lastIndex, match.index);
+      if (!beforeMatch.includes(FLAG_START) || beforeMatch.lastIndexOf(FLAG_END) > beforeMatch.lastIndexOf(FLAG_START)) {
+        parts.push(beforeMatch);
+        parts.push(`${FLAG_START}keyword${FLAG_END}${match[0]}${FLAG_START}/keyword${FLAG_END}`);
+      } else {
+        parts.push(beforeMatch + match[0]);
+      }
+      lastIndex = keywordRegex.lastIndex;
+    }
+    parts.push(highlightedCode.substring(lastIndex));
+    highlightedCode = parts.join('');
+  });
+
+  // 5. 함수 호출 하이라이팅
+  const functionRegex = /\b([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/g;
+  let fMatch;
+  let fParts = [];
+  let fLastIndex = 0;
+  
+  while ((fMatch = functionRegex.exec(highlightedCode)) !== null) {
+    const beforeMatch = highlightedCode.substring(fLastIndex, fMatch.index);
+    if (!beforeMatch.includes(FLAG_START) || beforeMatch.lastIndexOf(FLAG_END) > beforeMatch.lastIndexOf(FLAG_START)) {
+      fParts.push(beforeMatch);
+      fParts.push(`${FLAG_START}function${FLAG_END}${fMatch[1]}${FLAG_START}/function${FLAG_END}(`);
+    } else {
+      fParts.push(beforeMatch + fMatch[0]);
+    }
+    fLastIndex = functionRegex.lastIndex - 1; // '(' 제외
+  }
+  fParts.push(highlightedCode.substring(fLastIndex));
+  highlightedCode = fParts.join('');
+
+  // 플래그를 실제 HTML 태그로 변환
+  highlightedCode = highlightedCode
+    .replace(new RegExp(`${FLAG_START}comment${FLAG_END}`, 'g'), '<span class="code-comment">')
+    .replace(new RegExp(`${FLAG_START}/comment${FLAG_END}`, 'g'), '</span>')
+    .replace(new RegExp(`${FLAG_START}string${FLAG_END}`, 'g'), '<span class="code-string">')
+    .replace(new RegExp(`${FLAG_START}/string${FLAG_END}`, 'g'), '</span>')
+    .replace(new RegExp(`${FLAG_START}number${FLAG_END}`, 'g'), '<span class="code-number">')
+    .replace(new RegExp(`${FLAG_START}/number${FLAG_END}`, 'g'), '</span>')
+    .replace(new RegExp(`${FLAG_START}keyword${FLAG_END}`, 'g'), '<span class="code-keyword">')
+    .replace(new RegExp(`${FLAG_START}/keyword${FLAG_END}`, 'g'), '</span>')
+    .replace(new RegExp(`${FLAG_START}function${FLAG_END}`, 'g'), '<span class="code-function">')
+    .replace(new RegExp(`${FLAG_START}/function${FLAG_END}`, 'g'), '</span>');
+
+  return highlightedCode;
+}
+
+// marked 설정
+marked.setOptions({
+  highlight: function(code, lang) {
+    return highlightCode(code, lang);
+  },
+  langPrefix: 'language-'
+});
+
 // textarea 자동 높이 조절
 function autoResize(textarea) {
   textarea.style.height = 'auto';
@@ -77,6 +216,7 @@ function updateBotMessage(text) {
     <div class="sender">Castle Coder</div>
     <div class="text markdown-body">${marked.parse(text)}</div>
   `;
+  
   chatbox.scrollTop = chatbox.scrollHeight;
 }
 
@@ -326,26 +466,76 @@ export function renderChatView(chatDataOrMessage) {
       }
       
       .markdown-body pre {
-        background-color: #18181b;
-        border-radius: 6px;
-        font-size: 85%;
+        background-color: #0d1117;
+        border-radius: 8px;
+        font-size: 12px;
         line-height: 1.45;
         overflow: auto;
         padding: 16px;
         margin: 16px 0;
-        border: 1px solid #3f3f46;
+        border: 1px solid #30363d;
+        position: relative;
       }
       
       .markdown-body pre code {
         background-color: transparent;
         border: 0;
-        display: inline;
+        display: block;
         line-height: inherit;
         margin: 0;
         overflow: visible;
         padding: 0;
         word-wrap: normal;
-        color: #e4e4e7;
+        color: #e6edf3;
+        font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+        font-size: 12px;
+      }
+      
+      /* highlight.js 테마 오버라이드 */
+      .markdown-body .hljs {
+        background: transparent !important;
+        color: #e6edf3 !important;
+      }
+      
+      /* 인라인 코드 스타일 개선 */
+      .markdown-body :not(pre) > code {
+        background-color: rgba(110, 118, 129, 0.2);
+        color: #f85149;
+        padding: 0.2em 0.4em;
+        border-radius: 3px;
+        font-size: 85%;
+      }
+      
+      /* 커스텀 syntax highlighting 색상 */
+      .markdown-body .code-keyword {
+        color: #ff7b72;
+        font-weight: 600;
+      }
+      
+      .markdown-body .code-string {
+        color: #a5d6ff;
+      }
+      
+      .markdown-body .code-comment {
+        color: #8b949e;
+        font-style: italic;
+      }
+      
+      .markdown-body .code-number {
+        color: #79c0ff;
+      }
+      
+      .markdown-body .code-function {
+        color: #d2a8ff;
+        font-weight: 500;
+      }
+      
+      .markdown-body .code-operator {
+        color: #ffa657;
+      }
+      
+      .markdown-body .code-type {
+        color: #7ee787;
       }
       
       .markdown-body blockquote {
