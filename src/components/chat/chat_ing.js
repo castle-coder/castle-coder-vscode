@@ -323,8 +323,20 @@ function addMessage(sender, text, imageUrls = []) {
   const el = document.createElement('div');
   el.className = `chat-message ${sender==='You'?'user':'bot'}`;
   
-  // 봇 메시지인 경우 마크다운 파싱
-  const formattedText = sender === 'Bot' ? marked.parse(safeText) : safeText.replace(/\n/g,'<br>');
+  // 사용자 메시지는 평문으로, 봇 메시지는 마크다운으로 처리
+  let formattedText;
+  if (sender === 'Bot') {
+    formattedText = marked.parse(safeText);
+  } else {
+    // 사용자 메시지는 HTML 특수문자를 이스케이프하여 평문으로 표시
+    formattedText = safeText
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;')
+      .replace(/\n/g, '<br>');
+  }
   
   // 이미지 HTML 생성
   let imageHTML = '';
@@ -340,9 +352,12 @@ function addMessage(sender, text, imageUrls = []) {
     imageHTML += '</div>';
   }
   
+  // 사용자 메시지는 markdown-body 클래스를 제거하여 일반 텍스트로 표시
+  const textClass = sender === 'Bot' ? 'text markdown-body' : 'text';
+  
   el.innerHTML = `
     <div class="sender">${sender === 'Bot' ? 'Castle Coder' : sender}</div>
-    <div class="text markdown-body">${formattedText}</div>
+    <div class="${textClass}">${formattedText}</div>
     ${imageHTML}
   `;
   chatbox.appendChild(el);
@@ -876,6 +891,54 @@ export function renderChatView(chatDataOrMessage) {
       
       .copy-btn:active {
         transform: scale(0.95);
+      }
+      
+      /* 채팅 메시지 컨테이너 스타일 추가 */
+      .chat-message {
+        margin-bottom: 16px;
+        max-width: 100%;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        word-break: break-word;
+      }
+      
+      .chat-message .text {
+        max-width: 100%;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        word-break: break-word;
+        white-space: pre-wrap;
+        overflow: hidden;
+      }
+      
+      .chat-message.user .text {
+        background-color: rgba(255,255,255,0.05);
+        border-radius: 8px;
+        padding: 8px 12px;
+        margin-top: 4px;
+      }
+      
+      .chat-message.bot .text {
+        margin-top: 4px;
+      }
+      
+      /* 긴 URL과 코드 처리 */
+      .chat-message .text a {
+        word-break: break-all;
+        overflow-wrap: anywhere;
+      }
+      
+      .chat-message .text code {
+        word-break: break-all;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+      }
+      
+      /* 사용자 메시지의 긴 텍스트 처리 */
+      .chat-message.user .text {
+        hyphens: auto;
+        -webkit-hyphens: auto;
+        -moz-hyphens: auto;
       }
     </style>
   `;
