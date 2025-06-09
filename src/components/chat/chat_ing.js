@@ -937,7 +937,7 @@ export function renderChatView(chatDataOrMessage) {
   // 세션 로드 시 messages 배열 처리
   if (chatDataOrMessage && Array.isArray(chatDataOrMessage.messages)) {
     if (chatDataOrMessage.messages.length === 0) {
-      addMessage('Bot', 'No messages yet. Start a new conversation!');
+      // 메시지가 없는 경우 기본 메시지를 표시하지 않음
       setSendButtonEnabled(true, false);
     } else {
       // 메시지를 원래 순서대로 출력
