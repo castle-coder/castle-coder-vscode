@@ -49,6 +49,8 @@ html, body, #app, #chat-ing-app {
   margin: 4px 0;
   padding: 6px 10px;
   max-width: 80%;
+  white-space: pre-wrap;     /* HTML이 해석되지 않고 텍스트로 표시 */
+  word-break: break-word;    /* 긴 텍스트 줄바꿈 */
 }
 
 /* 6) 봇 메시지 (Bot) */
