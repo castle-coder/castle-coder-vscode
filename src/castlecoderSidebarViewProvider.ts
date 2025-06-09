@@ -186,6 +186,10 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
         await this._chatMessageHandler?.handleMessage(msg);
       } else if (msg.type === 'llm-chat') {
         await this._llmMessageHandler?.handleMessage(msg);
+      } else if (msg.type === 'llm-cancel') {
+        // llm-cancel은 LLMMessageHandler와 SecurityRefactoringHandler 모두에서 처리
+        await this._llmMessageHandler?.handleMessage(msg);
+        await this._securityRefactoringHandler?.handleMessage(msg);
       } else if (msg.type === 'securityPrompt') {
         await this._securityRefactoringHandler?.handleMessage(msg);
       } else if (msg.type === 'uploadImage') {

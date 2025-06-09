@@ -151,36 +151,71 @@ marked.setOptions({
 // 안전한 마크다운 파싱 (스트리밍 중 불완전한 마크다운 처리)
 function safeParseMarkdown(text) {
   try {
-    // 불완전한 코드 블록 처리
     let safeText = text;
     
-    // 홀수 개의 ``` 가 있는 경우 (미완성 코드 블록)
+    // 1. 불완전한 코드 블록 처리 (더 강력한 방식)
     const codeBlockMatches = safeText.match(/```/g);
     if (codeBlockMatches && codeBlockMatches.length % 2 === 1) {
-      // 마지막 ```부터 끝까지를 일반 텍스트로 처리
-      const lastIndex = safeText.lastIndexOf('```');
-      const beforeLastBlock = safeText.substring(0, lastIndex);
-      const afterLastBlock = safeText.substring(lastIndex + 3);
-      safeText = beforeLastBlock + '\n```\n' + afterLastBlock + '\n```';
+      // 홀수 개의 ```가 있으면 마지막 코드 블록이 미완성
+      const lastCodeBlockIndex = safeText.lastIndexOf('```');
+      const beforeLastBlock = safeText.substring(0, lastCodeBlockIndex);
+      const afterLastBlock = safeText.substring(lastCodeBlockIndex + 3);
+      
+      // 미완성 코드 블록을 일반 텍스트로 처리
+      safeText = beforeLastBlock + '\n\n**[코드 작성 중...]**\n\n```text\n' + afterLastBlock + '\n```';
     }
     
-    // 불완전한 인라인 코드 처리
-    const inlineCodeMatches = safeText.match(/`/g);
+    // 2. 불완전한 인라인 코드 처리
+    const inlineCodeMatches = safeText.match(/(?<!\\)`/g); // 이스케이프되지 않은 백틱만 카운트
     if (inlineCodeMatches && inlineCodeMatches.length % 2 === 1) {
-      safeText += '`';
+      // 마지막 백틱 이후에 너무 긴 텍스트가 있으면 백틱을 닫기
+      const lastBacktickIndex = safeText.lastIndexOf('`');
+      const afterLastBacktick = safeText.substring(lastBacktickIndex + 1);
+      
+      if (afterLastBacktick.length > 50 || afterLastBacktick.includes('\n')) {
+        // 너무 길거나 줄바꿈이 있으면 일반 텍스트로 처리
+        safeText = safeText.substring(0, lastBacktickIndex) + ' [코드 작성 중...] ' + afterLastBacktick;
+      } else {
+        safeText += '`';
+      }
+    }
+    
+    // 3. 불완전한 볼드/이탤릭 처리
+    const boldMatches = safeText.match(/(?<!\\)\*\*/g);
+    if (boldMatches && boldMatches.length % 2 === 1) {
+      safeText += '**';
+    }
+    
+    const italicMatches = safeText.match(/(?<!\\)\*(?!\*)/g);
+    if (italicMatches && italicMatches.length % 2 === 1) {
+      safeText += '*';
+    }
+    
+    // 4. 불완전한 링크 처리
+    if (safeText.includes('[') && !safeText.includes('](')) {
+      const lastBracketIndex = safeText.lastIndexOf('[');
+      const afterBracket = safeText.substring(lastBracketIndex);
+      if (!afterBracket.includes(']') && afterBracket.length > 50) {
+        safeText = safeText.substring(0, lastBracketIndex) + afterBracket.substring(1);
+      }
     }
     
     return marked.parse(safeText);
   } catch (error) {
     console.warn('Markdown parsing error:', error);
-    // 파싱 실패 시 안전한 HTML 변환
-    return text.replace(/&/g, '&amp;')
-              .replace(/</g, '&lt;')
-              .replace(/>/g, '&gt;')
-              .replace(/\n/g, '<br>')
-              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-              .replace(/\*(.*?)\*/g, '<em>$1</em>')
-              .replace(/`([^`\n]+)`/g, '<code>$1</code>');
+    // 파싱 완전 실패 시 안전한 HTML 변환
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\n/g, '<br>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`([^`\n]+)`/g, '<code>$1</code>')
+      .replace(/```[\s\S]*?```/g, (match) => {
+        const code = match.replace(/```\w*\n?/, '').replace(/```$/, '');
+        return `<pre><code>${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`;
+      });
   }
 }
 
@@ -324,10 +359,35 @@ function addMessage(sender, text, imageUrls = []) {
   }
 }
 
+// 마크다운 파싱 성능 최적화를 위한 변수들
+let lastUpdateTime = 0;
+let pendingUpdate = null;
+
 // 실시간으로 봇 메시지를 업데이트(마지막 메시지 덮어쓰기)
 function updateBotMessage(text) {
   const chatbox = document.getElementById('chatbox');
   if (!chatbox) return;
+  
+  const now = Date.now();
+  const textLength = text.length;
+  
+  // 성능 최적화: 짧은 간격으로 너무 많은 업데이트 방지
+  const updateInterval = textLength > 1000 ? 200 : 100;
+  
+  // 이전 업데이트에서 너무 적은 시간이 지났으면 throttle
+  if (now - lastUpdateTime < updateInterval) {
+    if (pendingUpdate) {
+      clearTimeout(pendingUpdate);
+    }
+    pendingUpdate = setTimeout(() => {
+      updateBotMessage(text);
+      pendingUpdate = null;
+    }, updateInterval);
+    return;
+  }
+  
+  lastUpdateTime = now;
+  
   let lastBotMsg = chatbox.querySelector('.chat-message.bot:last-child');
   if (!lastBotMsg) {
     // 없으면 새로 추가
@@ -335,13 +395,29 @@ function updateBotMessage(text) {
     lastBotMsg.className = 'chat-message bot';
     chatbox.appendChild(lastBotMsg);
   }
+  
+  // 안전한 마크다운 파싱
+  let parsedContent;
+  try {
+    parsedContent = safeParseMarkdown(text);
+  } catch (error) {
+    console.error('Markdown parsing failed:', error);
+    // 완전 실패 시 일반 텍스트로 표시
+    parsedContent = text.replace(/\n/g, '<br>');
+  }
+  
   lastBotMsg.innerHTML = `
     <div class="sender">Castle Coder</div>
-    <div class="text markdown-body">${safeParseMarkdown(text)}</div>
+    <div class="text markdown-body">${parsedContent}</div>
   `;
   
-  // 복사 버튼 추가
-  addCopyButtonsToCodeBlocks(lastBotMsg);
+  // 복사 버튼 추가 (throttling 적용)
+  if (!lastBotMsg._copyButtonTimeout) {
+    lastBotMsg._copyButtonTimeout = setTimeout(() => {
+      addCopyButtonsToCodeBlocks(lastBotMsg);
+      lastBotMsg._copyButtonTimeout = null;
+    }, 300);
+  }
   
   chatbox.scrollTop = chatbox.scrollHeight;
 }
@@ -937,8 +1013,13 @@ let llmBotBuffer = '';
 if (!window.__castleCoder_message_listener_registered) {
   window.addEventListener('message', ev => {
     if (ev.data.type === 'newChat') {
-      // 새로운 채팅 시작 시 버퍼 초기화
+      // 새로운 채팅 시작 시 버퍼 및 최적화 변수 초기화
       llmBotBuffer = '';
+      lastUpdateTime = 0;
+      if (pendingUpdate) {
+        clearTimeout(pendingUpdate);
+        pendingUpdate = null;
+      }
       renderStartView();
       // 시작 버튼을 Cancel 버튼으로 변경
       const startBtn = document.querySelector('.start-btn');
@@ -977,11 +1058,16 @@ if (!window.__castleCoder_message_listener_registered) {
       }
 
       if (data.type === 'token' && data.content !== undefined) {
-        // 새로운 토큰이 시작될 때 이전 응답 제거
+        // 새로운 토큰이 시작될 때 이전 응답 제거 및 변수 초기화
         if (llmBotBuffer === '') {
           const lastBotMessage = document.querySelector('.chat-message.bot:last-child');
           if (lastBotMessage) {
             lastBotMessage.remove();
+          }
+          lastUpdateTime = 0;
+          if (pendingUpdate) {
+            clearTimeout(pendingUpdate);
+            pendingUpdate = null;
           }
         }
         
@@ -1004,6 +1090,40 @@ if (!window.__castleCoder_message_listener_registered) {
           `;
         }
       } else {
+        // 최종 완전한 마크다운 파싱 및 복사 버튼 추가
+        if (llmBotBuffer.trim()) {
+          const lastBotMessage = document.querySelector('.chat-message.bot:last-child');
+          if (lastBotMessage) {
+            // 모든 timeout 정리
+            if (lastBotMessage._copyButtonTimeout) {
+              clearTimeout(lastBotMessage._copyButtonTimeout);
+              lastBotMessage._copyButtonTimeout = null;
+            }
+            if (pendingUpdate) {
+              clearTimeout(pendingUpdate);
+              pendingUpdate = null;
+            }
+            
+            // 최종 완전한 마크다운 파싱 (marked.parse 직접 사용)
+            try {
+              const finalParsedText = marked.parse(llmBotBuffer);
+              lastBotMessage.innerHTML = `
+                <div class="sender">Castle Coder</div>
+                <div class="text markdown-body">${finalParsedText}</div>
+              `;
+            } catch (error) {
+              console.error('Final markdown parsing failed:', error);
+              lastBotMessage.innerHTML = `
+                <div class="sender">Castle Coder</div>
+                <div class="text markdown-body">${llmBotBuffer.replace(/\n/g, '<br>')}</div>
+              `;
+            }
+            
+            // 최종 복사 버튼 추가
+            addCopyButtonsToCodeBlocks(lastBotMessage);
+          }
+        }
+        
         // 세션 log(메시지) 갱신
         const sessionId = getChatSessionId && getChatSessionId();
         if (sessionId) {
@@ -1013,7 +1133,14 @@ if (!window.__castleCoder_message_listener_registered) {
         }
       }
       
+      // 모든 변수 초기화
       llmBotBuffer = '';
+      lastUpdateTime = 0;
+      if (pendingUpdate) {
+        clearTimeout(pendingUpdate);
+        pendingUpdate = null;
+      }
+      
       if (llmBotBuffer.trim() !== '') {
         stopLoadingAnimation();
       }
