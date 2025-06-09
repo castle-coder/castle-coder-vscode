@@ -323,43 +323,68 @@ function addMessage(sender, text, imageUrls = []) {
   const el = document.createElement('div');
   el.className = `chat-message ${sender==='You'?'user':'bot'}`;
   
-  // 사용자 메시지는 평문으로, 봇 메시지는 마크다운으로 처리
-  let formattedText;
-  if (sender === 'Bot') {
-    formattedText = marked.parse(safeText);
+  // 사용자 메시지와 봇 메시지 처리 분리
+  if (sender === 'You') {
+    // 사용자 메시지는 텍스트로만 처리
+    const senderDiv = document.createElement('div');
+    senderDiv.className = 'sender';
+    senderDiv.textContent = sender;
+    
+    const textDiv = document.createElement('div');
+    textDiv.className = 'text';
+    textDiv.textContent = safeText; // HTML 이스케이프됨
+    
+    el.appendChild(senderDiv);
+    el.appendChild(textDiv);
+    
+    // 이미지가 있는 경우 추가
+    if (imageUrls && imageUrls.length > 0) {
+      const imageContainer = document.createElement('div');
+      imageContainer.className = 'message-images';
+      imageContainer.style.cssText = 'margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px;';
+      
+      imageUrls.forEach(imageUrl => {
+        const imageDiv = document.createElement('div');
+        imageDiv.className = 'message-image-container';
+        imageDiv.style.cssText = 'border: 1px solid #444; border-radius: 4px; overflow: hidden; max-width: 60px;';
+        
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.alt = '첨부 이미지';
+        img.style.cssText = 'width: 100%; height: auto; display: block; cursor: pointer;';
+        img.onclick = () => window.open(imageUrl, '_blank');
+        
+        imageDiv.appendChild(img);
+        imageContainer.appendChild(imageDiv);
+      });
+      
+      el.appendChild(imageContainer);
+    }
   } else {
-    // 사용자 메시지는 HTML 특수문자를 이스케이프하여 평문으로 표시
-    formattedText = safeText
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#x27;')
-      .replace(/\n/g, '<br>');
+    // 봇 메시지는 마크다운 파싱
+    const formattedText = marked.parse(safeText);
+    
+    // 이미지 HTML 생성
+    let imageHTML = '';
+    if (imageUrls && imageUrls.length > 0) {
+      imageHTML = '<div class="message-images" style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px;">';
+      imageUrls.forEach(imageUrl => {
+        imageHTML += `
+          <div class="message-image-container" style="border: 1px solid #444; border-radius: 4px; overflow: hidden; max-width: 60px;">
+            <img src="${imageUrl}" alt="첨부 이미지" style="width: 100%; height: auto; display: block; cursor: pointer;" onclick="window.open('${imageUrl}', '_blank')" />
+          </div>
+        `;
+      });
+      imageHTML += '</div>';
+    }
+    
+    el.innerHTML = `
+      <div class="sender">Castle Coder</div>
+      <div class="text markdown-body">${formattedText}</div>
+      ${imageHTML}
+    `;
   }
   
-  // 이미지 HTML 생성
-  let imageHTML = '';
-  if (imageUrls && imageUrls.length > 0) {
-    imageHTML = '<div class="message-images" style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px;">';
-    imageUrls.forEach(imageUrl => {
-      imageHTML += `
-        <div class="message-image-container" style="border: 1px solid #444; border-radius: 4px; overflow: hidden; max-width: 60px;">
-          <img src="${imageUrl}" alt="첨부 이미지" style="width: 100%; height: auto; display: block; cursor: pointer;" onclick="window.open('${imageUrl}', '_blank')" />
-        </div>
-      `;
-    });
-    imageHTML += '</div>';
-  }
-  
-  // 사용자 메시지는 markdown-body 클래스를 제거하여 일반 텍스트로 표시
-  const textClass = sender === 'Bot' ? 'text markdown-body' : 'text';
-  
-  el.innerHTML = `
-    <div class="sender">${sender === 'Bot' ? 'Castle Coder' : sender}</div>
-    <div class="${textClass}">${formattedText}</div>
-    ${imageHTML}
-  `;
   chatbox.appendChild(el);
   chatbox.scrollTop = chatbox.scrollHeight;
   
@@ -891,54 +916,6 @@ export function renderChatView(chatDataOrMessage) {
       
       .copy-btn:active {
         transform: scale(0.95);
-      }
-      
-      /* 채팅 메시지 컨테이너 스타일 추가 */
-      .chat-message {
-        margin-bottom: 16px;
-        max-width: 100%;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        word-break: break-word;
-      }
-      
-      .chat-message .text {
-        max-width: 100%;
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        word-break: break-word;
-        white-space: pre-wrap;
-        overflow: hidden;
-      }
-      
-      .chat-message.user .text {
-        background-color: rgba(255,255,255,0.05);
-        border-radius: 8px;
-        padding: 8px 12px;
-        margin-top: 4px;
-      }
-      
-      .chat-message.bot .text {
-        margin-top: 4px;
-      }
-      
-      /* 긴 URL과 코드 처리 */
-      .chat-message .text a {
-        word-break: break-all;
-        overflow-wrap: anywhere;
-      }
-      
-      .chat-message .text code {
-        word-break: break-all;
-        overflow-wrap: anywhere;
-        white-space: pre-wrap;
-      }
-      
-      /* 사용자 메시지의 긴 텍스트 처리 */
-      .chat-message.user .text {
-        hyphens: auto;
-        -webkit-hyphens: auto;
-        -moz-hyphens: auto;
       }
     </style>
   `;
