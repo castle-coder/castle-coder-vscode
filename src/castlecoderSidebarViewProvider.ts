@@ -108,6 +108,9 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
       vscode.Uri.joinPath(this._extensionUri, 'src', 'components', 'chat', 'connect', 'securityRefactoring.js')
     );
 
+    // 캐슬 이미지 URI 추가
+    const castleImageUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'castle.png'));
+
     const cspMeta = `
       <meta http-equiv="Content-Security-Policy"
         content="
@@ -132,6 +135,13 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
   <link href="${loginStyleUri}" rel="stylesheet" />
   <link href="${chatStartStyleUri}" rel="stylesheet" />
   <link href="${chatIngStyleUri}" rel="stylesheet" />
+  
+  <!-- 캐슬 이미지 CSS 변수 설정 -->
+  <style>
+    :root {
+      --castle-image-url: url('${castleImageUri}');
+    }
+  </style>
 </head>
 <body>
 
@@ -176,6 +186,10 @@ export class CastleCoderSidebarViewProvider implements vscode.WebviewViewProvide
         await this._chatMessageHandler?.handleMessage(msg);
       } else if (msg.type === 'llm-chat') {
         await this._llmMessageHandler?.handleMessage(msg);
+      } else if (msg.type === 'llm-cancel') {
+        // llm-cancel은 LLMMessageHandler와 SecurityRefactoringHandler 모두에서 처리
+        await this._llmMessageHandler?.handleMessage(msg);
+        await this._securityRefactoringHandler?.handleMessage(msg);
       } else if (msg.type === 'securityPrompt') {
         await this._securityRefactoringHandler?.handleMessage(msg);
       } else if (msg.type === 'uploadImage') {

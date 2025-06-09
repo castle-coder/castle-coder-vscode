@@ -25,5 +25,6 @@ export function clearAuth() {
   accessToken = null;
   userId = null;
   const axios = require('axios');
+  
   delete axios.defaults.headers.common['Authorization'];
 } 

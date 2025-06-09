@@ -181,8 +181,16 @@ export class ChatMessageHandler {
       
       // Transform the response data into the expected format
       const transformedData = res.data.data.map((log: any) => [
-        { sender: 'You', text: log.prompt },
-        { sender: 'Bot', text: log.response }
+        { 
+          sender: 'You', 
+          text: log.prompt,
+          imageUrls: log.imageUrls || []
+        },
+        { 
+          sender: 'Bot', 
+          text: log.response,
+          imageUrls: []
+        }
       ]).flat();
       
       this.view.webview.postMessage({
