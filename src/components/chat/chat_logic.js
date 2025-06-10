@@ -82,7 +82,13 @@ export function handleStartChat(prompt, imageUrls = []) {
   if (startApp && chatApp) {
     startApp.style.display = 'none';  
     chatApp.style.display = 'block';  
-    renderChatView(prompt);
+    // 이미지 정보를 포함한 메시지 객체로 전달
+    console.log('[Debug] handleStartChat - prompt:', prompt, 'imageUrls:', imageUrls);
+    renderChatView({ 
+      type: 'startMessage', 
+      text: prompt, 
+      imageUrls: imageUrls || [] 
+    });
   } else {
     console.error('Start app or Chat app not found');
   }

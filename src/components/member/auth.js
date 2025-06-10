@@ -104,9 +104,22 @@ window.addEventListener('message', (e) => {
     // 회원가입 response
     case 'signupResponse':
       if (msg.success) {
-        // 가입 성공
-        document.getElementById('reg-error').style.color = 'limegreen'
-        document.getElementById('reg-error').textContent = '회원가입 완료! 로그인해주세요.'
+        // 가입 성공 - 로그인 화면으로 이동
+        import('./login.js').then(({ renderLoginView }) => {
+          renderLoginView();
+          // 성공 메시지를 로그인 화면에 표시
+          setTimeout(() => {
+            const loginError = document.getElementById('login-error');
+            if (loginError) {
+              loginError.style.color = 'limegreen';
+              loginError.textContent = '회원가입 완료! 로그인해주세요.';
+              // 3초 후 메시지 제거
+              setTimeout(() => {
+                loginError.textContent = '';
+              }, 3000);
+            }
+          }, 100);
+        });
       } else {
         document.getElementById('reg-error').style.color = '#ff6b6b'
         document.getElementById('reg-error').textContent = msg.error
@@ -123,17 +136,30 @@ window.addEventListener('message', (e) => {
     case 'checkEmailResult':
       // { success: boolean, available?: boolean, error?: string }
       const fb = document.getElementById('reg-error')
+      
       if (msg.success) {
         if (msg.available) {
           fb.style.color = 'limegreen'
           fb.textContent = '사용 가능한 이메일입니다.'
+          // 사용 가능한 이메일인 경우 체크 상태로 변경
+          if (window.setEmailChecked) {
+            window.setEmailChecked(true)
+          }
         } else {
           fb.style.color = '#ff6b6b'
           fb.textContent = '이미 등록된 이메일입니다.'
+          // 중복된 이메일인 경우 체크 해제
+          if (window.setEmailChecked) {
+            window.setEmailChecked(false)
+          }
         }
       } else {
         fb.style.color = '#ff6b6b'
         fb.textContent = msg.error
+        // 에러인 경우 체크 해제
+        if (window.setEmailChecked) {
+          window.setEmailChecked(false)
+        }
       }
       break
 

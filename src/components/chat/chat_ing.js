@@ -2,142 +2,18 @@ import { renderStartView } from './chat_start.js';
 import { logout } from '../member/auth.js';
 import { renderSessionList, renderSessionListOverlay } from '../chat/session/chat_session.js';
 import { getSession, setSession } from './session/sessionState.js';
-import { uploadImage, deleteImage } from './connect/imageUpload.js';
+import { uploadImage } from './imageUrl/imageUpload.js';
+import { deleteImage } from './imageUrl/imageDelete.js';
 import { getChatSessionId, handleSendMessage, setChatSessionId } from './chat_logic.js';
 import { loadChatSession } from './session/sessionLoad.js';
 import { cancelResponse as cancelLLMResponse } from './connect/codeGenerate.js';
 import { marked } from 'https://cdn.jsdelivr.net/npm/marked@4.3.0/lib/marked.esm.js';
 import { requestUpdateSessionTitle } from './session/sessionApi.js';
 
-// 간단한 syntax highlighting 함수
+// 강화된 syntax highlighting 함수
 function highlightCode(code, language) {
-  if (!language) language = 'javascript';
-  
-  // HTML 특수문자 이스케이프
-  let highlightedCode = code
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;');
-
-  // 언어별 패턴 정의
-  const patterns = {
-    javascript: {
-      keywords: ['function', 'const', 'let', 'var', 'if', 'else', 'for', 'while', 'return', 'class', 'extends', 'import', 'export', 'from', 'async', 'await', 'try', 'catch', 'finally', 'throw', 'new', 'this', 'super', 'static', 'public', 'private', 'protected'],
-      comments: [/\/\*[\s\S]*?\*\//g, /\/\/.*$/gm],
-      strings: [/&quot;[^&]*?&quot;/g, /&#x27;[^&]*?&#x27;/g, /`[^`]*?`/g]
-    },
-    python: {
-      keywords: ['def', 'class', 'if', 'elif', 'else', 'for', 'while', 'return', 'import', 'from', 'as', 'try', 'except', 'finally', 'raise', 'with', 'async', 'await', 'lambda', 'and', 'or', 'not', 'in', 'is', 'True', 'False', 'None'],
-      comments: [/#.*$/gm],
-      strings: [/&quot;[^&]*?&quot;/g, /&#x27;[^&]*?&#x27;/g, /&quot;&quot;&quot;[\s\S]*?&quot;&quot;&quot;/g, /&#x27;&#x27;&#x27;[\s\S]*?&#x27;&#x27;&#x27;/g]
-    },
-    html: {
-      keywords: ['html', 'head', 'body', 'div', 'span', 'p', 'a', 'img', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'meta', 'link', 'script', 'style'],
-      comments: [/&lt;!--[\s\S]*?--&gt;/g],
-      strings: [/&quot;[^&]*?&quot;/g, /&#x27;[^&]*?&#x27;/g]
-    },
-    css: {
-      keywords: ['color', 'background', 'margin', 'padding', 'border', 'width', 'height', 'display', 'position', 'top', 'left', 'right', 'bottom', 'font', 'text', 'line-height', 'z-index', 'opacity', 'transform', 'transition'],
-      comments: [/\/\*[\s\S]*?\*\//g],
-      strings: [/&quot;[^&]*?&quot;/g, /&#x27;[^&]*?&#x27;/g]
-    }
-  };
-
-  const langPatterns = patterns[language] || patterns.javascript;
-  
-  // 임시 플래그를 사용하여 하이라이팅된 부분 표시
-  const FLAG_START = '___HIGHLIGHT_START___';
-  const FLAG_END = '___HIGHLIGHT_END___';
-  
-  // 1. 주석 하이라이팅
-  if (langPatterns.comments) {
-    langPatterns.comments.forEach(commentPattern => {
-      highlightedCode = highlightedCode.replace(commentPattern, `${FLAG_START}comment${FLAG_END}$&${FLAG_START}/comment${FLAG_END}`);
-    });
-  }
-
-  // 2. 문자열 하이라이팅
-  if (langPatterns.strings) {
-    langPatterns.strings.forEach(stringPattern => {
-      highlightedCode = highlightedCode.replace(stringPattern, `${FLAG_START}string${FLAG_END}$&${FLAG_START}/string${FLAG_END}`);
-    });
-  }
-
-  // 3. 숫자 하이라이팅 (플래그로 보호된 영역 제외)
-  const numberRegex = /\b\d+(?:\.\d+)?\b/g;
-  let match;
-  let parts = [];
-  let lastIndex = 0;
-  
-  while ((match = numberRegex.exec(highlightedCode)) !== null) {
-    const beforeMatch = highlightedCode.substring(lastIndex, match.index);
-    if (!beforeMatch.includes(FLAG_START) || beforeMatch.lastIndexOf(FLAG_END) > beforeMatch.lastIndexOf(FLAG_START)) {
-      parts.push(beforeMatch);
-      parts.push(`${FLAG_START}number${FLAG_END}${match[0]}${FLAG_START}/number${FLAG_END}`);
-    } else {
-      parts.push(beforeMatch + match[0]);
-    }
-    lastIndex = numberRegex.lastIndex;
-  }
-  parts.push(highlightedCode.substring(lastIndex));
-  highlightedCode = parts.join('');
-
-  // 4. 키워드 하이라이팅
-  langPatterns.keywords.forEach(keyword => {
-    const keywordRegex = new RegExp(`\\b${keyword}\\b`, 'g');
-    let match;
-    let parts = [];
-    let lastIndex = 0;
-    
-    while ((match = keywordRegex.exec(highlightedCode)) !== null) {
-      const beforeMatch = highlightedCode.substring(lastIndex, match.index);
-      if (!beforeMatch.includes(FLAG_START) || beforeMatch.lastIndexOf(FLAG_END) > beforeMatch.lastIndexOf(FLAG_START)) {
-        parts.push(beforeMatch);
-        parts.push(`${FLAG_START}keyword${FLAG_END}${match[0]}${FLAG_START}/keyword${FLAG_END}`);
-      } else {
-        parts.push(beforeMatch + match[0]);
-      }
-      lastIndex = keywordRegex.lastIndex;
-    }
-    parts.push(highlightedCode.substring(lastIndex));
-    highlightedCode = parts.join('');
-  });
-
-  // 5. 함수 호출 하이라이팅
-  const functionRegex = /\b([a-zA-Z_$][a-zA-Z0-9_$]*)\s*\(/g;
-  let fMatch;
-  let fParts = [];
-  let fLastIndex = 0;
-  
-  while ((fMatch = functionRegex.exec(highlightedCode)) !== null) {
-    const beforeMatch = highlightedCode.substring(fLastIndex, fMatch.index);
-    if (!beforeMatch.includes(FLAG_START) || beforeMatch.lastIndexOf(FLAG_END) > beforeMatch.lastIndexOf(FLAG_START)) {
-      fParts.push(beforeMatch);
-      fParts.push(`${FLAG_START}function${FLAG_END}${fMatch[1]}${FLAG_START}/function${FLAG_END}(`);
-    } else {
-      fParts.push(beforeMatch + fMatch[0]);
-    }
-    fLastIndex = functionRegex.lastIndex - 1; // '(' 제외
-  }
-  fParts.push(highlightedCode.substring(fLastIndex));
-  highlightedCode = fParts.join('');
-
-  // 플래그를 실제 HTML 태그로 변환
-  highlightedCode = highlightedCode
-    .replace(new RegExp(`${FLAG_START}comment${FLAG_END}`, 'g'), '<span class="code-comment">')
-    .replace(new RegExp(`${FLAG_START}/comment${FLAG_END}`, 'g'), '</span>')
-    .replace(new RegExp(`${FLAG_START}string${FLAG_END}`, 'g'), '<span class="code-string">')
-    .replace(new RegExp(`${FLAG_START}/string${FLAG_END}`, 'g'), '</span>')
-    .replace(new RegExp(`${FLAG_START}number${FLAG_END}`, 'g'), '<span class="code-number">')
-    .replace(new RegExp(`${FLAG_START}/number${FLAG_END}`, 'g'), '</span>')
-    .replace(new RegExp(`${FLAG_START}keyword${FLAG_END}`, 'g'), '<span class="code-keyword">')
-    .replace(new RegExp(`${FLAG_START}/keyword${FLAG_END}`, 'g'), '</span>')
-    .replace(new RegExp(`${FLAG_START}function${FLAG_END}`, 'g'), '<span class="code-function">')
-    .replace(new RegExp(`${FLAG_START}/function${FLAG_END}`, 'g'), '</span>');
-
-  return highlightedCode;
+    // 원본 코드를 그대로 반환 (변환 없음)
+  return code;
 }
 
 // marked 설정
@@ -145,7 +21,11 @@ marked.setOptions({
   highlight: function(code, lang) {
     return highlightCode(code, lang);
   },
-  langPrefix: 'language-'
+  langPrefix: 'language-',
+  sanitize: false,
+  smartypants: false,
+  breaks: false,
+  gfm: true
 });
 
 // 안전한 마크다운 파싱 (스트리밍 중 불완전한 마크다운 처리)
@@ -153,16 +33,12 @@ function safeParseMarkdown(text) {
   try {
     let safeText = text;
     
-    // 1. 불완전한 코드 블록 처리 (더 강력한 방식)
+    // 1. 불완전한 코드 블록 처리 (스트리밍 중 코드 블록 보존)
     const codeBlockMatches = safeText.match(/```/g);
     if (codeBlockMatches && codeBlockMatches.length % 2 === 1) {
       // 홀수 개의 ```가 있으면 마지막 코드 블록이 미완성
-      const lastCodeBlockIndex = safeText.lastIndexOf('```');
-      const beforeLastBlock = safeText.substring(0, lastCodeBlockIndex);
-      const afterLastBlock = safeText.substring(lastCodeBlockIndex + 3);
-      
-      // 미완성 코드 블록을 일반 텍스트로 처리
-      safeText = beforeLastBlock + '\n\n**[코드 작성 중...]**\n\n```text\n' + afterLastBlock + '\n```';
+      // 하지만 스트리밍 중이므로 코드 블록을 임시로 닫아줌
+      safeText += '\n```';
     }
     
     // 2. 불완전한 인라인 코드 처리
@@ -200,7 +76,43 @@ function safeParseMarkdown(text) {
       }
     }
     
-    return marked.parse(safeText);
+    // 마크다운 파싱
+    let parsedText = marked.parse(safeText);
+    
+    // 파싱 후 코드 블록 내 HTML 엔티티 복원
+    parsedText = parsedText.replace(/<pre><code[^>]*>([\s\S]*?)<\/code><\/pre>/g, (match, codeContent) => {
+      // 코드 블록 내부의 HTML 엔티티들을 원래대로 복원
+      const restoredContent = codeContent
+        .replace(/&amp;/g, '&amp;')  // &amp; 유지
+        .replace(/&lt;/g, '&lt;')    // &lt; 유지
+        .replace(/&gt;/g, '&gt;')    // &gt; 유지
+        .replace(/&quot;/g, '&quot;') // &quot; 유지
+        .replace(/&#x27;/g, '&#x27;') // &#x27; 유지
+        .replace(/&#39;/g, '&#39;')   // &#39; 유지
+        .replace(/&nbsp;/g, '&nbsp;') // &nbsp; 유지
+        .replace(/&apos;/g, '&apos;') // &apos; 유지
+        .replace(/&laquo;/g, '&laquo;') // &laquo; 유지
+        .replace(/&raquo;/g, '&raquo;'); // &raquo; 유지
+      return match.replace(codeContent, restoredContent);
+    });
+    
+    // 인라인 코드 내 HTML 엔티티 복원
+    parsedText = parsedText.replace(/<code[^>]*>([\s\S]*?)<\/code>/g, (match, codeContent) => {
+      const restoredContent = codeContent
+        .replace(/&amp;/g, '&amp;')
+        .replace(/&lt;/g, '&lt;')
+        .replace(/&gt;/g, '&gt;')
+        .replace(/&quot;/g, '&quot;')
+        .replace(/&#x27;/g, '&#x27;')
+        .replace(/&#39;/g, '&#39;')
+        .replace(/&nbsp;/g, '&nbsp;')
+        .replace(/&apos;/g, '&apos;')
+        .replace(/&laquo;/g, '&laquo;')
+        .replace(/&raquo;/g, '&raquo;');
+      return match.replace(codeContent, restoredContent);
+    });
+    
+    return parsedText;
   } catch (error) {
     console.warn('Markdown parsing error:', error);
     // 파싱 완전 실패 시 안전한 HTML 변환
@@ -346,12 +258,17 @@ function addMessage(sender, text, imageUrls = []) {
       imageUrls.forEach(imageUrl => {
         const imageDiv = document.createElement('div');
         imageDiv.className = 'message-image-container';
-        imageDiv.style.cssText = 'border: 1px solid #444; border-radius: 4px; overflow: hidden; max-width: 60px;';
+        imageDiv.style.cssText = 'border: 1px solid #444; border-radius: 8px; overflow: hidden; max-width: 200px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);';
         
         const img = document.createElement('img');
         img.src = imageUrl;
         img.alt = '첨부 이미지';
-        img.style.cssText = 'width: 100%; height: auto; display: block; cursor: pointer;';
+        img.style.cssText = 'width: 100%; height: auto; display: block; cursor: pointer; transition: transform 0.2s ease;';
+        img.onload = () => {
+          // 이미지 로드 완료 후 hover 효과 추가
+          img.onmouseenter = () => img.style.transform = 'scale(1.02)';
+          img.onmouseleave = () => img.style.transform = 'scale(1)';
+        };
         img.onclick = () => window.open(imageUrl, '_blank');
         
         imageDiv.appendChild(img);
@@ -370,8 +287,8 @@ function addMessage(sender, text, imageUrls = []) {
       imageHTML = '<div class="message-images" style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px;">';
       imageUrls.forEach(imageUrl => {
         imageHTML += `
-          <div class="message-image-container" style="border: 1px solid #444; border-radius: 4px; overflow: hidden; max-width: 60px;">
-            <img src="${imageUrl}" alt="첨부 이미지" style="width: 100%; height: auto; display: block; cursor: pointer;" onclick="window.open('${imageUrl}', '_blank')" />
+          <div class="message-image-container" style="border: 1px solid #444; border-radius: 8px; overflow: hidden; max-width: 200px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <img src="${imageUrl}" alt="첨부 이미지" style="width: 100%; height: auto; display: block; cursor: pointer; transition: transform 0.2s ease;" onclick="window.open('${imageUrl}', '_blank')" onmouseenter="this.style.transform='scale(1.02)'" onmouseleave="this.style.transform='scale(1)'" />
           </div>
         `;
       });
@@ -459,7 +376,7 @@ function updateBotMessage(text) {
     }, 300);
   }
   
-  chatbox.scrollTop = chatbox.scrollHeight;
+  // 스트리밍 중에는 스크롤 업데이트 하지 않음
 }
 
 // Send 버튼 활성/비활성 함수 수정
@@ -573,6 +490,18 @@ export function renderChatView(chatDataOrMessage) {
   const memberApp = document.getElementById('member-app');
   const chatApp   = document.getElementById('chat-ing-app');
   if (!chatApp) return;
+
+  // 기존 이벤트 리스너 정리를 위해 시작 화면의 요소들을 복제로 교체
+  const oldFirstQuestion = document.getElementById('first-question');
+  const oldStartBtn = document.getElementById('start-btn');
+  if (oldFirstQuestion && oldFirstQuestion.parentNode) {
+    const newFirstQuestion = oldFirstQuestion.cloneNode(true);
+    oldFirstQuestion.parentNode.replaceChild(newFirstQuestion, oldFirstQuestion);
+  }
+  if (oldStartBtn && oldStartBtn.parentNode) {
+    const newStartBtn = oldStartBtn.cloneNode(true);
+    oldStartBtn.parentNode.replaceChild(newStartBtn, oldStartBtn);
+  }
 
   // 시작/로그인 영역 숨기고, 채팅 화면만 보이기
   memberApp.style.display = 'none';
@@ -798,6 +727,21 @@ export function renderChatView(chatDataOrMessage) {
         color: #7ee787;
       }
       
+      .markdown-body .code-attribute {
+        color: #79c0ff;
+        font-weight: 500;
+      }
+      
+      .markdown-body .code-selector {
+        color: #7ee787;
+        font-weight: 600;
+      }
+      
+      .markdown-body .code-property {
+        color: #ff7b72;
+        font-weight: 500;
+      }
+      
       .markdown-body blockquote {
         margin: 0 0 16px;
         padding: 0 1em;
@@ -936,7 +880,7 @@ export function renderChatView(chatDataOrMessage) {
   // 세션 로드 시 messages 배열 처리
   if (chatDataOrMessage && Array.isArray(chatDataOrMessage.messages)) {
     if (chatDataOrMessage.messages.length === 0) {
-      addMessage('Bot', 'No messages yet. Start a new conversation!');
+      // 메시지가 없는 경우 기본 메시지를 표시하지 않음
       setSendButtonEnabled(true, false);
     } else {
       // 메시지를 원래 순서대로 출력
@@ -966,6 +910,12 @@ export function renderChatView(chatDataOrMessage) {
     }
   } else if (typeof chatDataOrMessage === 'string' && chatDataOrMessage.trim() !== '') {
     addMessage('You', chatDataOrMessage);
+    addMessage('Bot', 'Generate...');
+    startLoadingAnimation();
+    setSendButtonEnabled(true, true);
+  } else if (chatDataOrMessage && chatDataOrMessage.type === 'startMessage') {
+    // 시작 메시지 (이미지 포함 가능)
+    addMessage('You', chatDataOrMessage.text, chatDataOrMessage.imageUrls || []);
     addMessage('Bot', 'Generate...');
     startLoadingAnimation();
     setSendButtonEnabled(true, true);
@@ -1051,7 +1001,10 @@ export function renderChatView(chatDataOrMessage) {
       
       if (!msg) return;
       const imageUrls = attachedImages.map(img => img.imageUrl);
-      // 질문을 보낼 때 바로 내 메시지를 추가
+      // 질문을 보낼 때 바로 내 메시지를 추가 
+      console.log('[Debug] Before sending - attachedImages:', attachedImages);
+      console.log('[Debug] Before sending - imageUrls:', imageUrls);
+   
       addMessage('You', msg, imageUrls);
       addMessage('Bot', 'Generate...');
 
@@ -1239,13 +1192,34 @@ if (!window.__castleCoder_message_listener_registered) {
           }
         }
         
-        // 세션 log(메시지) 갱신
+        // 세션을 다시 불러와서 화면 갱신
         const sessionId = getChatSessionId && getChatSessionId();
         if (sessionId) {
-          loadChatSession(sessionId).then(chatData => {
-            renderChatView(chatData);
-          });
+          console.log('[Debug] 응답 완료 - 세션 다시 로드:', sessionId);
+          // 잠깐 기다린 후 세션을 다시 불러옴 (서버 저장 완료 대기)
+          setTimeout(async () => {
+            try {
+              const sessionData = await loadChatSession(sessionId);
+              console.log('[Debug] 세션 다시 로드 완료:', sessionData);
+              // 현재 세션 정보 유지하면서 메시지만 다시 렌더링
+              const currentSession = getSession();
+              renderChatView({
+                messages: sessionData.messages,
+                chatSessionId: sessionId
+              });
+              // 세션 정보 복원
+              setSession(sessionId, currentSession.title);
+            } catch (error) {
+              console.error('세션 다시 로드 실패:', error);
+            }
+          }, 1000); // 1초 대기 후 다시 로드
         }
+      }
+      
+      // 응답 완료 후 스크롤을 맨 아래로 이동
+      const chatbox = document.getElementById('chatbox');
+      if (chatbox) {
+        chatbox.scrollTop = chatbox.scrollHeight;
       }
       
       // 모든 변수 초기화
@@ -1256,9 +1230,11 @@ if (!window.__castleCoder_message_listener_registered) {
         pendingUpdate = null;
       }
       
-      if (llmBotBuffer.trim() !== '') {
-        stopLoadingAnimation();
-      }
+      // 로딩 애니메이션 중지
+      stopLoadingAnimation();
+      
+      // Send 버튼 다시 활성화
+      setSendButtonEnabled(true, false);
     }
     if (ev.data.type === 'llm-chat-error') {
       console.log('[Debug] llm-chat-error:', ev.data.error);
