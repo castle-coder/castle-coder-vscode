@@ -130,8 +130,21 @@ export function renderStartView() {
   if (ta) {
     autoResize(ta);
     ta.addEventListener('input', () => autoResize(ta));
+    
+    // IME composition 상태 추적을 위한 플래그
+    let isComposing = false;
+    
+    // composition 이벤트 리스너 추가
+    ta.addEventListener('compositionstart', () => {
+      isComposing = true;
+    });
+    
+    ta.addEventListener('compositionend', () => {
+      isComposing = false;
+    });
+    
     ta.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
         e.preventDefault();
         btn.click();
       }

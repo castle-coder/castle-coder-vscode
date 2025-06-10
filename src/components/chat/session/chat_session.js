@@ -2,8 +2,8 @@ import { attachDeleteHandlers } from './sessionDelete.js';
 import { requestChatSessionList, requestUpdateSessionTitle } from './sessionApi.js';
 import { loadChatSession } from './sessionLoad.js';
 import { renderChatView } from '../chat_ing.js';
-import { setSession } from './sessionState.js';
-import { setChatSessionId } from '../chat_logic.js';
+import { setSession, getSession } from './sessionState.js';
+import { setChatSessionId, getChatSessionId } from '../chat_logic.js';
 
 export async function renderSessionList() {
   const listDiv = document.getElementById('session-list');
@@ -13,6 +13,10 @@ export async function renderSessionList() {
     const sessions = await requestChatSessionList();
     // 세션 id 기준 오름차순 정렬
     sessions.sort((a, b) => a.id - b.id);
+    
+    // 현재 활성 세션 ID 가져오기
+    const currentSessionId = getChatSessionId();
+    
     if (!sessions.length) {
       listDiv.innerHTML = '<div style="color:#888;">No previous chats.</div>';
       return;
@@ -23,6 +27,13 @@ export async function renderSessionList() {
       style.id = 'session-list-style';
       style.textContent = `
         .session-item:hover {
+          background: #2c313a !important;
+          color: #fff !important;
+        }
+        .session-item.current-session {
+          font-weight: 600 !important;
+        }
+        .session-item.current-session:hover {
           background: #2c313a !important;
           color: #fff !important;
         }
@@ -41,17 +52,23 @@ export async function renderSessionList() {
     }
     // 세션 리스트 렌더링 (DEL 버튼 포함)
     listDiv.innerHTML = sessions.map(
-      s => `<div style="display:flex;align-items:center;margin-bottom:4px;">
-        <button class="session-item" data-id="${s.id}" data-title="${s.title || ''}" style="flex:1; display: flex; align-items: center; width: 100%; text-align: left; background: #23272e; color: #fff; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; font-size: 1rem; transition: background 0.2s;">
-          <span style="display:inline-block;width:20px;height:20px;margin-right:12px;">
-            <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
-              <path d="M4 20V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7l-3 3z" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </span>
-          <span class="session-title" title="더블클릭하여 제목 편집">${s.title || '(No Title)'}</span>
-        </button>
-        <button class="del-session-btn" data-id="${s.id}">DEL</button>
-      </div>`
+      s => {
+        const isCurrentSession = currentSessionId && s.id === currentSessionId;
+        const currentClass = isCurrentSession ? ' current-session' : '';
+        const currentDot = isCurrentSession ? '<span style="display:inline-block;width:8px;height:8px;background:#4CAF50;border-radius:50%;margin-right:8px;"></span>' : '';
+        
+        return `<div style="display:flex;align-items:center;margin-bottom:4px;">
+          <button class="session-item${currentClass}" data-id="${s.id}" data-title="${s.title || ''}" style="flex:1; display: flex; align-items: center; width: 100%; text-align: left; background: #23272e; color: #fff; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; font-size: 1rem; transition: background 0.2s;">
+            <span style="display:inline-block;width:20px;height:20px;margin-right:12px;">
+              <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
+                <path d="M4 20V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7l-3 3z" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span class="session-title" title="더블클릭하여 제목 편집">${currentDot}${s.title || '(No Title)'}</span>
+          </button>
+          <button class="del-session-btn" data-id="${s.id}">DEL</button>
+        </div>`;
+      }
     ).join('');
 
     // 세션 클릭 이벤트
@@ -59,12 +76,23 @@ export async function renderSessionList() {
       btn.addEventListener('click', async e => {
         // 편집 모드가 아닐 때만 세션 로드
         if (!e.target.closest('.session-title-edit')) {
-          const id = btn.getAttribute('data-id');
+          const id = Number(btn.getAttribute('data-id'));
           const title = btn.getAttribute('data-title') || '';
+          
+          // 현재 세션과 동일한 세션을 클릭한 경우
+          if (id === currentSessionId) {
+            // 세션 리스트 오버레이만 닫기
+            const overlay = document.getElementById('session-list-overlay');
+            if (overlay) {
+              overlay.remove();
+            }
+            return; // 추가 처리 없이 종료
+          }
+          
           try {
-            setSession(Number(id), title);
-            setChatSessionId(Number(id));
-            const chatData = await loadChatSession(Number(id));
+            setSession(id, title);
+            setChatSessionId(id);
+            const chatData = await loadChatSession(id);
             renderChatView(chatData);
             
             // 세션 클릭 시 화면 전환을 위한 메시지 전송

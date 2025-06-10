@@ -71,6 +71,7 @@ export class MessageHandler {
       } else if (err instanceof Error) {
         errMsg = err.message;
       }
+      
       this.view.webview.postMessage({
         type: 'checkEmailResult',
         success: false,

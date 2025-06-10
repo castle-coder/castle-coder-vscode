@@ -486,6 +486,11 @@ function stopLoadingAnimation() {
 
 export function renderChatView(chatDataOrMessage) {
   console.log('[Debug] renderChatView called', chatDataOrMessage);
+  
+  // 채팅 뷰 렌더링 시 SSE 무시 플래그 초기화 및 활성 세션 ID 설정
+  ignoringSSE = false;
+  currentActiveSessionId = getChatSessionId();
+  
   const startApp  = document.getElementById('chat-start-app');
   const memberApp = document.getElementById('member-app');
   const chatApp   = document.getElementById('chat-ing-app');
@@ -930,8 +935,21 @@ export function renderChatView(chatDataOrMessage) {
   if (ta) {
     autoResize(ta);
     ta.addEventListener('input', () => autoResize(ta));
+    
+    // IME composition 상태 추적을 위한 플래그
+    let isComposing = false;
+    
+    // composition 이벤트 리스너 추가
+    ta.addEventListener('compositionstart', () => {
+      isComposing = true;
+    });
+    
+    ta.addEventListener('compositionend', () => {
+      isComposing = false;
+    });
+    
     ta.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !e.shiftKey) {
+      if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
         e.preventDefault();
         btn.click();
       }
@@ -1000,6 +1018,11 @@ export function renderChatView(chatDataOrMessage) {
       }
       
       if (!msg) return;
+      
+      // 새로운 메시지 전송 시 SSE 무시 플래그 초기화 및 활성 세션 ID 설정
+      ignoringSSE = false;
+      currentActiveSessionId = getChatSessionId();
+      
       const imageUrls = attachedImages.map(img => img.imageUrl);
       // 질문을 보낼 때 바로 내 메시지를 추가 
       console.log('[Debug] Before sending - attachedImages:', attachedImages);
@@ -1076,6 +1099,8 @@ export function renderChatView(chatDataOrMessage) {
 }
 
 let llmBotBuffer = '';
+let ignoringSSE = false; // SSE 응답을 무시할지 여부
+let currentActiveSessionId = null; // 현재 활성 세션 ID (SSE 필터링용)
 
 // 메시지 이벤트 리스너 중복 등록 방지
 if (!window.__castleCoder_message_listener_registered) {
@@ -1083,6 +1108,8 @@ if (!window.__castleCoder_message_listener_registered) {
     if (ev.data.type === 'newChat') {
       // 새로운 채팅 시작 시 버퍼 및 최적화 변수 초기화
       llmBotBuffer = '';
+      ignoringSSE = false; // SSE 무시 플래그 초기화
+      currentActiveSessionId = null; // 활성 세션 ID 초기화
       lastUpdateTime = 0;
       if (pendingUpdate) {
         clearTimeout(pendingUpdate);
@@ -1109,9 +1136,38 @@ if (!window.__castleCoder_message_listener_registered) {
     if (ev.data.type === 'showSessionList') {
       renderSessionListOverlay();
     }
+    if (ev.data.type === 'sessionClicked') {
+      // 세션 변경 시 SSE 무시 플래그 설정
+      console.log('[Debug] sessionClicked - setting ignoringSSE to true');
+      ignoringSSE = true;
+      currentActiveSessionId = null; // 활성 세션 ID 무효화
+      llmBotBuffer = '';
+      
+      // 로딩 메시지 제거
+      const loadingMessage = document.querySelector('.chat-message.bot:last-child');
+      if (loadingMessage && (loadingMessage.textContent.includes('Generate') || loadingMessage.textContent.includes('...'))) {
+        loadingMessage.remove();
+      }
+      
+      stopLoadingAnimation();
+      setSendButtonEnabled(true, false);
+    }
     if (ev.data.type === 'llm-chat-response') {
       const data = ev.data.data;
-      console.log('[Debug] llm-chat-response:', data);
+      const currentSessionId = getChatSessionId();
+      console.log('[Debug] llm-chat-response:', data, 'ignoringSSE:', ignoringSSE, 'currentSessionId:', currentSessionId, 'activeSessionId:', currentActiveSessionId);
+      
+      // SSE 무시 플래그가 설정되어 있으면 토큰 처리하지 않음
+      if (ignoringSSE) {
+        console.log('[Debug] Ignoring SSE response due to cancel/session change');
+        return;
+      }
+      
+      // 현재 활성 세션과 다른 세션의 응답이면 무시
+      if (currentActiveSessionId && currentSessionId && currentActiveSessionId !== currentSessionId) {
+        console.log('[Debug] Ignoring SSE response from different session:', currentActiveSessionId, 'vs', currentSessionId);
+        return;
+      }
 
       // 취소된 경우 취소 메시지로 변경하고 더 이상의 토큰 처리 중단
       if (data.cancelled) {
@@ -1145,8 +1201,23 @@ if (!window.__castleCoder_message_listener_registered) {
       }
     }
     if (ev.data.type === 'llm-chat-end') {
-      console.log('llmbotbuffer:',llmBotBuffer);
       const data = ev.data.data;
+      const currentSessionId = getChatSessionId();
+      console.log('[Debug] llm-chat-end:', data, 'ignoringSSE:', ignoringSSE, 'currentSessionId:', currentSessionId, 'activeSessionId:', currentActiveSessionId);
+      
+      // SSE 무시 플래그가 설정되어 있으면 처리하지 않음
+      if (ignoringSSE) {
+        console.log('[Debug] Ignoring SSE end due to cancel/session change');
+        return;
+      }
+      
+      // 현재 활성 세션과 다른 세션의 응답이면 무시
+      if (currentActiveSessionId && currentSessionId && currentActiveSessionId !== currentSessionId) {
+        console.log('[Debug] Ignoring SSE end from different session:', currentActiveSessionId, 'vs', currentSessionId);
+        return;
+      }
+      
+      console.log('llmbotbuffer:',llmBotBuffer);
       
       // 취소된 경우 취소 메시지로 변경
       if (data.cancelled) {
@@ -1224,6 +1295,8 @@ if (!window.__castleCoder_message_listener_registered) {
       
       // 모든 변수 초기화
       llmBotBuffer = '';
+      ignoringSSE = false; // SSE 무시 플래그 초기화
+      // currentActiveSessionId는 유지 (현재 세션에서 계속 작업 가능)
       lastUpdateTime = 0;
       if (pendingUpdate) {
         clearTimeout(pendingUpdate);
@@ -1237,7 +1310,20 @@ if (!window.__castleCoder_message_listener_registered) {
       setSendButtonEnabled(true, false);
     }
     if (ev.data.type === 'llm-chat-error') {
-      console.log('[Debug] llm-chat-error:', ev.data.error);
+      const currentSessionId = getChatSessionId();
+      console.log('[Debug] llm-chat-error:', ev.data.error, 'ignoringSSE:', ignoringSSE, 'currentSessionId:', currentSessionId, 'activeSessionId:', currentActiveSessionId);
+      
+      // SSE 무시 플래그가 설정되어 있으면 처리하지 않음
+      if (ignoringSSE) {
+        console.log('[Debug] Ignoring SSE error due to cancel/session change');
+        return;
+      }
+      
+      // 현재 활성 세션과 다른 세션의 응답이면 무시
+      if (currentActiveSessionId && currentSessionId && currentActiveSessionId !== currentSessionId) {
+        console.log('[Debug] Ignoring SSE error from different session:', currentActiveSessionId, 'vs', currentSessionId);
+        return;
+      }
       const chatbox = document.getElementById('chatbox');
       if (chatbox) {
         const el = document.createElement('div');
@@ -1265,6 +1351,7 @@ if (!window.__castleCoder_message_listener_registered) {
       }
       // 버퍼 초기화
       llmBotBuffer = '';
+      ignoringSSE = false; // SSE 무시 플래그 초기화
       // 애니메이션 중지
       stopLoadingAnimation();
       // Send 버튼으로 변경
@@ -1272,12 +1359,15 @@ if (!window.__castleCoder_message_listener_registered) {
     }
     if (ev.data.type === 'llm-cancel-error') {
       console.error('[Debug] Cancel error:', ev.data.error);
-      // 취소 실패 시 에러 메시지 표시
+      // 취소 실패해도 SSE 무시 플래그 설정하여 추가 토큰 처리 방지
+      ignoringSSE = true;
+      
+      // 취소 실패 시에도 현재 메시지를 취소 메시지로 변경 (사용자 경험 개선)
       const lastBotMessage = document.querySelector('.chat-message.bot:last-child');
       if (lastBotMessage) {
         lastBotMessage.innerHTML = `
           <div class="sender">Castle Coder</div>
-          <div class="text">[Error] 취소 요청 실패: ${ev.data.error}</div>
+          <div class="text">cancelled.</div>
         `;
       }
       // Send 버튼으로 변경
@@ -1291,6 +1381,13 @@ if (!window.__castleCoder_message_listener_registered) {
 function cancelResponse() {
   const chatSessionId = getChatSessionId();
   
+  console.log('[Debug] cancelResponse called, chatSessionId:', chatSessionId, 'ignoringSSE before:', ignoringSSE);
+  
+  // SSE 무시 플래그를 즉시 설정 (가장 먼저)
+  ignoringSSE = true;
+  currentActiveSessionId = null; // 활성 세션 ID 무효화
+  console.log('[Debug] Set ignoringSSE to true and cleared activeSessionId');
+  
   if (!chatSessionId) {
     console.error('[Debug] No chatSessionId found');
     return;
@@ -1299,16 +1396,19 @@ function cancelResponse() {
   // 즉시 Send 버튼으로 변경
   setSendButtonEnabled(true, false);
   
+  // 버퍼 초기화
+  llmBotBuffer = '';
+  
   // 로딩 메시지 제거
   const loadingMessage = document.querySelector('.chat-message.bot:last-child');
-  if (loadingMessage && loadingMessage.textContent.includes('Generate')) {
+  if (loadingMessage && (loadingMessage.textContent.includes('Generate') || loadingMessage.textContent.includes('...'))) {
     loadingMessage.remove();
   }
   
   // 애니메이션 중지
   stopLoadingAnimation();
   
-  // 취소 API 호출
+  // 취소 API 호출 (실패해도 상관없음)
   cancelLLMResponse(chatSessionId);
   
   // 취소 메시지 추가
