@@ -58,13 +58,13 @@ export async function renderSessionList() {
         const currentDot = isCurrentSession ? '<span style="display:inline-block;width:8px;height:8px;background:#4CAF50;border-radius:50%;margin-right:8px;"></span>' : '';
         
         return `<div style="display:flex;align-items:center;margin-bottom:4px;">
-          <button class="session-item${currentClass}" data-id="${s.id}" data-title="${s.title || ''}" style="flex:1; display: flex; align-items: center; width: 100%; text-align: left; background: #23272e; color: #fff; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; font-size: 1rem; transition: background 0.2s;">
+          <button class="session-item${currentClass}" data-id="${s.id}" data-title="${s.title || ''}" style="flex:1; display: flex; align-items: center; width: 100%; text-align: left; background: #23272e; color: ${isCurrentSession ? '#888' : '#fff'}; border: none; border-radius: 4px; padding: 8px 12px; cursor: ${isCurrentSession ? 'default' : 'pointer'}; font-size: 1rem; transition: background 0.2s;">
             <span style="display:inline-block;width:20px;height:20px;margin-right:12px;">
               <svg viewBox="0 0 24 24" fill="none" width="20" height="20">
                 <path d="M4 20V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7l-3 3z" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </span>
-            <span class="session-title" title="더블클릭하여 제목 편집">${currentDot}${s.title || '(No Title)'}</span>
+            <span class="session-title" title="${isCurrentSession ? '현재 사용 중인 세션' : '더블클릭하여 제목 편집'}">${currentDot}${s.title || '(No Title)'}</span>
           </button>
           <button class="del-session-btn" data-id="${s.id}">DEL</button>
         </div>`;
@@ -74,42 +74,34 @@ export async function renderSessionList() {
     // 세션 클릭 이벤트
     listDiv.querySelectorAll('.session-item').forEach(btn => {
       btn.addEventListener('click', async e => {
-        // 편집 모드가 아닐 때만 세션 로드
-        if (!e.target.closest('.session-title-edit')) {
-          const id = Number(btn.getAttribute('data-id'));
-          const title = btn.getAttribute('data-title') || '';
+        // 현재 세션이거나 편집 모드일 때는 클릭 무시
+        const id = Number(btn.getAttribute('data-id'));
+        if (id === currentSessionId || e.target.closest('.session-title-edit')) {
+          return;
+        }
+        
+        const title = btn.getAttribute('data-title') || '';
+        
+        try {
+          setSession(id, title);
+          setChatSessionId(id);
+          const chatData = await loadChatSession(id);
+          renderChatView(chatData);
           
-          // 현재 세션과 동일한 세션을 클릭한 경우
-          if (id === currentSessionId) {
-            // 세션 리스트 오버레이만 닫기
-            const overlay = document.getElementById('session-list-overlay');
-            if (overlay) {
-              overlay.remove();
-            }
-            return; // 추가 처리 없이 종료
-          }
+          // 세션 클릭 시 화면 전환을 위한 메시지 전송
+          window.postMessage({ type: 'sessionClicked' }, '*');
           
-          try {
-            setSession(id, title);
-            setChatSessionId(id);
-            const chatData = await loadChatSession(id);
-            renderChatView(chatData);
-            
-            // 세션 클릭 시 화면 전환을 위한 메시지 전송
-            window.postMessage({ type: 'sessionClicked' }, '*');
-            
-            // 세션 리스트 오버레이 닫기
-            const overlay = document.getElementById('session-list-overlay');
-            if (overlay) {
-              overlay.remove();
-            }
-            // 렌더링 완료 후 스크롤을 맨 밑으로 이동
-            setTimeout(() => {
-              window.postMessage({ type: 'scrollToBottom' }, '*');
-            }, 100);
-          } catch (error) {
-            console.error('Error loading chat session:', error);
+          // 세션 리스트 오버레이 닫기
+          const overlay = document.getElementById('session-list-overlay');
+          if (overlay) {
+            overlay.remove();
           }
+          // 렌더링 완료 후 스크롤을 맨 밑으로 이동
+          setTimeout(() => {
+            window.postMessage({ type: 'scrollToBottom' }, '*');
+          }, 100);
+        } catch (error) {
+          console.error('Error loading chat session:', error);
         }
       });
 

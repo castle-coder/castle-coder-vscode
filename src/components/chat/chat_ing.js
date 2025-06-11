@@ -229,7 +229,6 @@ function autoResize(textarea) {
 // 전역 addMessage 함수
 function addMessage(sender, text, imageUrls = []) {
   const chatbox = document.getElementById('chatbox');
-  console.log('[Debug] addMessage called. chatbox:', chatbox, 'sender:', sender, 'text:', text, 'imageUrls:', imageUrls);
   if (!chatbox) return;
   const safeText = typeof text === 'string' ? text : '';
   const el = document.createElement('div');
@@ -890,23 +889,23 @@ export function renderChatView(chatDataOrMessage) {
     } else {
       // 메시지를 원래 순서대로 출력
       chatDataOrMessage.messages.forEach(msg => {
-        console.log('[ChatLog]', msg.createdAt, msg);
+        // console.log('[ChatLog]', msg.createdAt, msg);
         addMessage(msg.sender || 'Bot', msg.text, msg.imageUrls || []);
       });
       // 메시지 로드 후 DOM 렌더링이 완료된 후 스크롤을 맨 아래로 이동
       requestAnimationFrame(() => {
         if (chatbox) {
-          console.log('[ChatLog] scrollToBottom');
-          console.log('[ChatLog] chatbox:', chatbox);
-          console.log('[ChatLog] chatbox.scrollHeight:', chatbox.scrollHeight);
-          console.log('[ChatLog] chatbox.clientHeight:', chatbox.clientHeight);
-          console.log('[ChatLog] chatbox.offsetHeight:', chatbox.offsetHeight);
-          console.log('[ChatLog] chatbox.scrollTop (before):', chatbox.scrollTop);
-          console.log('[ChatLog] chatbox.style.overflow:', getComputedStyle(chatbox).overflow);
-          console.log('[ChatLog] chatbox.style.overflowY:', getComputedStyle(chatbox).overflowY);
-          console.log('[ChatLog] chatbox.style.height:', getComputedStyle(chatbox).height);
+          // console.log('[ChatLog] scrollToBottom');
+          // console.log('[ChatLog] chatbox:', chatbox);
+          // console.log('[ChatLog] chatbox.scrollHeight:', chatbox.scrollHeight);
+          // console.log('[ChatLog] chatbox.clientHeight:', chatbox.clientHeight);
+          // console.log('[ChatLog] chatbox.offsetHeight:', chatbox.offsetHeight);
+          // console.log('[ChatLog] chatbox.scrollTop (before):', chatbox.scrollTop);
+          // console.log('[ChatLog] chatbox.style.overflow:', getComputedStyle(chatbox).overflow);
+          // console.log('[ChatLog] chatbox.style.overflowY:', getComputedStyle(chatbox).overflowY);
+          // console.log('[ChatLog] chatbox.style.height:', getComputedStyle(chatbox).height);
           chatbox.scrollTop = chatbox.scrollHeight;
-          console.log('[ChatLog] chatbox.scrollTop (after):', chatbox.scrollTop);
+          // console.log('[ChatLog] chatbox.scrollTop (after):', chatbox.scrollTop);
           
           // 모든 코드 블록에 복사 버튼 추가
           addCopyButtonsToCodeBlocks(chatbox);
@@ -1069,9 +1068,9 @@ export function renderChatView(chatDataOrMessage) {
             sessionTitleHeader.textContent = newTitle || 'Castle Coder';
             // 세션 상태도 업데이트
             setSession(sessionId, newTitle);
-            console.log('세션 제목이 변경되었습니다:', newTitle);
+            // console.log('세션 제목이 변경되었습니다:', newTitle);
           } catch (error) {
-            console.error('제목 변경 실패:', error);
+            // console.error('제목 변경 실패:', error);
             alert('제목 변경에 실패했습니다: ' + error.message);
           }
         }
