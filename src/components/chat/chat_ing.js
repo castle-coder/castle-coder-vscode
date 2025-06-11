@@ -1013,6 +1013,10 @@ export function renderChatView(chatDataOrMessage) {
       if (btn.style.background.includes('#ef4444') || btn.style.backgroundColor.includes('rgb(239, 68, 68)')) {
         console.log('[Debug] Cancel button clicked');
         cancelResponse();
+        // UI 즉시 중단 처리
+        ignoringSSE = true; // 이후 들어오는 SSE 응답 무시
+        stopLoadingAnimation(); // 로딩 애니메이션 중단
+        setSendButtonEnabled(true, false); // 버튼 상태 원복
         return;
       }
       
