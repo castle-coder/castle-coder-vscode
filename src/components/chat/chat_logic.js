@@ -45,6 +45,24 @@ window.addEventListener('message', ev => {
       renderSessionList();
       console.debug('[Debug] renderSessionList 호출');
     }
+  } else if (type === 'scrollToBottom') {
+    // 스크롤을 맨 밑으로 내리기
+    const chatbox = document.getElementById('chatbox');
+    if (chatbox) {
+      setTimeout(() => {
+        chatbox.scrollTop = chatbox.scrollHeight;
+      }, 100); // 약간의 딜레이를 주어 DOM 업데이트 후 스크롤
+    }
+  } else if (type === 'sessionClicked') {
+    // 세션 버튼 클릭 시 채팅 화면으로 전환
+    const startApp = document.getElementById('chat-start-app');
+    const chatApp = document.getElementById('chat-ing-app');
+    
+    if (startApp && chatApp) {
+      startApp.style.display = 'none';
+      chatApp.style.display = 'block';
+      console.debug('[Debug] 세션 클릭으로 채팅 화면 전환');
+    }
   }
 });
 
@@ -64,7 +82,13 @@ export function handleStartChat(prompt, imageUrls = []) {
   if (startApp && chatApp) {
     startApp.style.display = 'none';  
     chatApp.style.display = 'block';  
-    renderChatView(prompt);
+    // 이미지 정보를 포함한 메시지 객체로 전달
+    console.log('[Debug] handleStartChat - prompt:', prompt, 'imageUrls:', imageUrls);
+    renderChatView({ 
+      type: 'startMessage', 
+      text: prompt, 
+      imageUrls: imageUrls || [] 
+    });
   } else {
     console.error('Start app or Chat app not found');
   }

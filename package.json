@@ -2,7 +2,7 @@
   "name": "castle-coder",
   "displayName": "Castle Coder",
   "icon": "castle.png",
-  "version": "0.0.4",
+  "version": "0.0.12",
   "publisher": "YUCHANOH",
   "description": "",
   "engines": {
@@ -12,7 +12,8 @@
     "onView:castleCoder.openview",
     "onCommand:castleCoder.openview",
     "onCommand:castleCoder.newChat",
-    "onCommand:castleCoder.securityRefactor"
+    "onCommand:castleCoder.securityRefactor",
+    "onStartupFinished"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -65,7 +66,7 @@
         },
         {
           "command": "castleCoder.newChat",
-          "when": "view == castleCoder.openview",
+          "when": "view == castleCoder.openview && castleCoder:isLoggedIn",
           "group": "navigation"
         }
       ],
@@ -80,14 +81,17 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./"
+    "clean": "rimraf out",
+    "compile": "npm run clean && tsc -p ./"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.99.0",
+    "rimraf": "^5.0.5",
     "typescript": "^5.2.0"
   },
   "dependencies": {
-    "axios": "^1.9.0"
+    "axios": "^1.9.0",
+    "marked": "^15.0.12"
   }
 }

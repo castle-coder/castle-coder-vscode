@@ -5,28 +5,53 @@ import { vscode } from '../api/vscodeApi.js';
 // 전역 인증 상태 및 사용자 정보
 window.__castleCoder_auth = { isAuthenticated: false, user: null };
 
-// 로컬 스토리지에서 인증 정보 복원
-function restoreAuthState() {
-  const savedAuth = localStorage.getItem('castleCoder_auth');
-  if (savedAuth) {
-    try {
-      const { user, accessToken, refreshToken } = JSON.parse(savedAuth);
-      if (accessToken && refreshToken && user) {
-        window.__castleCoder_auth = {
-          isAuthenticated: true,
-          user: user,
-          accessToken: accessToken,
-          refreshToken: refreshToken
-        };
-        renderStartView();
-        return;
-      }
-    } catch (e) {
-      console.error('Failed to restore auth state:', e);
-      localStorage.removeItem('castleCoder_auth');
-    }
+// 로딩 표시
+function showLoading() {
+  const memberApp = document.getElementById('member-app');
+  if (memberApp) {
+    memberApp.innerHTML = '<div style="color:#888;padding:32px;text-align:center;">Loading...</div>';
+    memberApp.style.display = 'block';
   }
 }
+
+// Extension Host로부터 상태 복원
+function restoreAuthStateFromExtension(authData) {
+  // 다양한 구조를 모두 커버
+  const accessToken =
+    authData?.accessToken ||
+    authData?.data?.accessToken ||
+    authData?.user?.data?.accessToken;
+  const refreshToken =
+    authData?.refreshToken ||
+    authData?.data?.refreshToken ||
+    authData?.user?.data?.refreshToken;
+  const user =
+    authData?.user?.data?.user ||
+    authData?.user ||
+    authData?.data?.user ||
+    authData?.user?.data ||
+    authData?.data;
+
+  if (authData && accessToken) {
+    window.__castleCoder_auth = {
+      isAuthenticated: true,
+      user: user,
+      accessToken: accessToken,
+      refreshToken: refreshToken
+    };
+    renderStartView();
+  } else {
+    renderLoginView();
+  }
+}
+
+// 최초 mount 시 로딩 표시
+showLoading();
+
+// 일정 시간 내에 인증 정보가 오지 않으면 로그인 화면으로 fallback
+let authTimeout = setTimeout(() => {
+  renderLoginView();
+}, 1500); // 1.5초 후에도 응답 없으면 로그인 화면
 
 // 메시지 리스너
 window.addEventListener('message', (e) => {
@@ -34,24 +59,37 @@ window.addEventListener('message', (e) => {
   // console.log('[Webview] Received message:', msg);
   
   switch (msg.type) {
+    // Extension Host로부터 상태 복원
+    case 'restoreAuthState':
+    case 'authInfo':
+      clearTimeout(authTimeout);
+      restoreAuthStateFromExtension(msg.data);
+      break;
 
     // 로그인 response
     case 'loginResponse':
       // { success: true, data: { token, ... } }
       if (msg.success) {
-        const { accessToken, refreshToken, ...user } = msg.data;
+        const { accessToken, refreshToken, id, ...user } = msg.data.data;
         window.__castleCoder_auth = {
           isAuthenticated: true,
           user: user,
           accessToken: accessToken,
-          refreshToken: refreshToken
+          refreshToken: refreshToken,
+          userId: id
         };
-        // 로컬 스토리지에 인증 정보 저장
-        localStorage.setItem('castleCoder_auth', JSON.stringify({
-          user: user,
-          accessToken: accessToken,
-          refreshToken: refreshToken
-        }));
+        // Extension Host에도 저장
+        console.log('[CastleCoder][Webview] Sending saveAuth', { user, accessToken, refreshToken, userId: id });
+        vscode.postMessage({
+          type: 'saveAuth',
+          data: {
+            user: user,
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+            userId: id,
+            isAuthenticated: true
+          }
+        });
         renderStartView();
       } else {
         document.getElementById('login-error').textContent = msg.error;
@@ -66,9 +104,22 @@ window.addEventListener('message', (e) => {
     // 회원가입 response
     case 'signupResponse':
       if (msg.success) {
-        // 가입 성공
-        document.getElementById('reg-error').style.color = 'limegreen'
-        document.getElementById('reg-error').textContent = '회원가입 완료! 로그인해주세요.'
+        // 가입 성공 - 로그인 화면으로 이동
+        import('./login.js').then(({ renderLoginView }) => {
+          renderLoginView();
+          // 성공 메시지를 로그인 화면에 표시
+          setTimeout(() => {
+            const loginError = document.getElementById('login-error');
+            if (loginError) {
+              loginError.style.color = 'limegreen';
+              loginError.textContent = '회원가입 완료! 로그인해주세요.';
+              // 3초 후 메시지 제거
+              setTimeout(() => {
+                loginError.textContent = '';
+              }, 3000);
+            }
+          }, 100);
+        });
       } else {
         document.getElementById('reg-error').style.color = '#ff6b6b'
         document.getElementById('reg-error').textContent = msg.error
@@ -85,17 +136,30 @@ window.addEventListener('message', (e) => {
     case 'checkEmailResult':
       // { success: boolean, available?: boolean, error?: string }
       const fb = document.getElementById('reg-error')
+      
       if (msg.success) {
         if (msg.available) {
           fb.style.color = 'limegreen'
           fb.textContent = '사용 가능한 이메일입니다.'
+          // 사용 가능한 이메일인 경우 체크 상태로 변경
+          if (window.setEmailChecked) {
+            window.setEmailChecked(true)
+          }
         } else {
           fb.style.color = '#ff6b6b'
           fb.textContent = '이미 등록된 이메일입니다.'
+          // 중복된 이메일인 경우 체크 해제
+          if (window.setEmailChecked) {
+            window.setEmailChecked(false)
+          }
         }
       } else {
         fb.style.color = '#ff6b6b'
         fb.textContent = msg.error
+        // 에러인 경우 체크 해제
+        if (window.setEmailChecked) {
+          window.setEmailChecked(false)
+        }
       }
       break
 
@@ -103,6 +167,10 @@ window.addEventListener('message', (e) => {
       if (window.__castleCoder_auth.isAuthenticated) {
         renderStartView();
       }
+      break
+
+    case 'restoreSessionState':
+      console.log('[CastleCoder][Webview] Session from extension globalState:', msg.data);
       break
 
     default:
@@ -115,11 +183,9 @@ window.addEventListener('message', (e) => {
   // }
 })
 
-// ▶️ **웹뷰 로드 직후** 저장된 인증 상태 확인 후 적절한 화면 표시
-restoreAuthState();
-if (!window.__castleCoder_auth.isAuthenticated) {
-  renderLoginView();
-}
+// Webview가 mount될 때 Extension Host에 인증 정보 요청
+console.log('[CastleCoder][Webview] Sending getAuth');
+vscode.postMessage({ type: 'getAuth' });
 
 // 로그아웃 함수
 export function logout() {
@@ -127,7 +193,9 @@ export function logout() {
   window.__castleCoder_auth.user = null;
   localStorage.removeItem('castleCoder_auth');
   renderLoginView();
-  vscode.postMessage({ type: 'logout' });
+  if (vscode) {
+    vscode.postMessage({ type: 'logout' });
+  }
 }
 
 // 현재 인증 상태 확인

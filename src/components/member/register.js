@@ -14,12 +14,14 @@ export function renderRegisterView() {
       <div id="reg-error" class="error-message"></div>
       <div class="input-group" style="position:relative;">
         <input id="reg-email" type="email" placeholder="Email" />
-        <input
-          type="checkbox"
+        <button
+          type="button"
           id="reg-email-check"
           title="Check Email"
-          style="position:absolute; right:8px; top:50%; transform:translateY(-50%);"
-        />
+          style="position:absolute; right:8px; top:50%; transform:translateY(-50%); width:24px; height:24px; border:1px solid #666; border-radius:4px; background:#333; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s ease;"
+        >
+          <span id="check-icon" style="display:none; color:white; font-size:16px; font-weight:bold; line-height:1;">✓</span>
+        </button>
       </div>
 
       <input id="reg-firstname" placeholder="First Name" />
@@ -36,15 +38,42 @@ export function renderRegisterView() {
 
   const errorDiv       = document.getElementById('reg-error');
   const emailEl        = document.getElementById('reg-email');
-  const emailCheckBox  = document.getElementById('reg-email-check');
+  const emailCheckBtn  = document.getElementById('reg-email-check');
+  const checkIcon      = document.getElementById('check-icon');
+  
+  // 체크 상태를 저장하는 변수
+  let isEmailChecked = false;
 
-  // 이메일 중복 체크박스
-  emailCheckBox.addEventListener('change', () => {
+  // 이메일 입력 필드 변경 시 체크 상태 초기화
+  emailEl.addEventListener('input', () => {
+    console.log('[Webview] emailEl input');
+    setEmailChecked(false);
+    errorDiv.textContent = '';
+  });
+
+  // 체크 상태 설정 함수
+  function setEmailChecked(checked) {
+    isEmailChecked = checked;
+    if (checked) {
+      emailCheckBtn.style.background = '#22c55e';
+      emailCheckBtn.style.borderColor = '#22c55e';
+      checkIcon.style.display = 'block';
+    } else {
+      emailCheckBtn.style.background = '#333';
+      emailCheckBtn.style.borderColor = '#666';
+      checkIcon.style.display = 'none';
+    }
+  }
+
+  // 전역에서 접근 가능하도록 설정
+  window.setEmailChecked = setEmailChecked;
+
+  // 이메일 중복 체크 버튼
+  emailCheckBtn.addEventListener('click', () => {
     const email = emailEl.value.trim()
     if (!email) {
       errorDiv.style.color = '#ff6b6b'
       errorDiv.textContent = '이메일을 입력한 후 체크해주세요.'
-      emailCheckBox.checked = false
       return
     }
     // console.log('[Webview] Sending checkEmail for', email);
@@ -69,7 +98,7 @@ export function renderRegisterView() {
       errorDiv.textContent = '유효한 이메일 주소를 입력해주세요.'
       return
     }
-    if (!emailCheckBox.checked) {
+    if (!isEmailChecked) {
       errorDiv.style.color = '#ff6b6b'
       errorDiv.textContent = '이메일 중복 확인을 해주세요.'
       return
