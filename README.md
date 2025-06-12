@@ -1,21 +1,21 @@
 ## Overview
 
 **Login Screen**<br>
-Enter your email and password to log in.
-    <img src="./media/login.png" alt="Login" width="300"/>
+Enter your email and password to log in.<br>
+    <img src="https://castle-coder-s3-bucket.s3.ap-northeast-2.amazonaws.com/docs/login.png" alt="Login" width="300"/>
 
 <br>
 
 **Sign Up Screen**<br>
-Fill in your email and password to create a new account.
-    <img src="./media/register.png" alt="Sign up" width="300"/>
+Fill in your email and password to create a new account.<br>
+    <img src="https://castle-coder-s3-bucket.s3.ap-northeast-2.amazonaws.com/docs/sign_up.png" alt="Sign up" width="300"/>
 
 <br>
 
 **Main Page Overview**<br>
 
 This is the main interface of the Castle Coder extension, where you can access all features.<br>
-    <img src="./media/main.png" alt="Main Page" width="300"/>
+    <img src="https://castle-coder-s3-bucket.s3.ap-northeast-2.amazonaws.com/docs/main.png" alt="Main Page" width="300"/>
 - On the main page, you can attach images to your requests.
 - While a request is being processed, you can also cancel it at any time.
 - By clicking the "+" button, you can open a new chat window.
@@ -24,8 +24,8 @@ This is the main interface of the Castle Coder extension, where you can access a
 <br>
 
 **Chatting Record**<br>
-Here you can see a record of your previous chats and interactions.
-    <img src="./media/session.png" alt="Chatting Record" width="300"/>
+Here you can see a record of your previous chats and interactions.<br>
+    <img src="https://castle-coder-s3-bucket.s3.ap-northeast-2.amazonaws.com/docs/session.png" alt="Chatting Record" width="300"/>
 - In the Chatting Record section, you cannot select the chat session that you are currently using.
 - By clicking the Delete button, you can remove a chat record.
 - The title of each chat session can be set or changed manually by the user.
@@ -34,14 +34,16 @@ Here you can see a record of your previous chats and interactions.
 ## Demo
 
 **How to Generate Code**<br>
-![Security Refactoring Demo](./media/security_refactoring.gif)<br>
+![Security Refactoring Demo](https://castle-coder-s3-bucket.s3.ap-northeast-2.amazonaws.com/docs/generate_code.gif
+)<br>
 To generate code, simply enter your desired functionality in the prompt.<br>
 You can also specify a name for your code and select the technology stack you want to use.<br>
 If you want to include an image, you can attach it as part of your request
 <br><br>
 
 **How to Refactor Code for Security**<br>
-![Code Generation Demo](./media/code_generation.gif)<br>
+![Code Generation Demo](https://castle-coder-s3-bucket.s3.ap-northeast-2.amazonaws.com/docs/security_refactoring.gif
+)<br>
 To perform security refactoring, right-click on the code you want to improve and select the "Castle Coder: Security Refactoring" option from the context menu.<br>
 The extension will analyze your code for vulnerabilities, apply security improvements, and provide you with both the refactored code and an explanation of the changes.
 
