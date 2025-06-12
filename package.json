@@ -2,11 +2,15 @@
   "name": "castle-coder",
   "displayName": "Castle Coder",
   "icon": "castle.png",
-  "version": "0.0.12",
+  "version": "1.0.1",
   "publisher": "YUCHANOH",
   "description": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/castle-coder/castle-coder-vscode.git"
+  },
   "engines": {
-    "vscode": "^1.99.0"
+    "vscode": "^1.96.0"
   },
   "activationEvents": [
     "onView:castleCoder.openview",
@@ -86,9 +90,9 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "@types/vscode": "^1.99.0",
+    "@types/vscode": "^1.96.0",
     "rimraf": "^5.0.5",
-    "typescript": "^5.2.0"
+    "typescript": "^4.9.5"
   },
   "dependencies": {
     "axios": "^1.9.0",
