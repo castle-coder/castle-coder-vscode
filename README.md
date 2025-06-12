@@ -2,20 +2,20 @@
 
 **Login Screen**<br>
 Enter your email and password to log in.
-    <img src="./media/로그인창.png" alt="Login" width="300"/>
+    <img src="./media/login.png" alt="Login" width="300"/>
 
 <br>
 
 **Sign Up Screen**<br>
 Fill in your email and password to create a new account.
-    <img src="./media/회원가입창.png" alt="Sign up" width="300"/>
+    <img src="./media/register.png" alt="Sign up" width="300"/>
 
 <br>
 
 **Main Page Overview**<br>
 
 This is the main interface of the Castle Coder extension, where you can access all features.<br>
-    <img src="./media/메인.png" alt="Main Page" width="300"/>
+    <img src="./media/main.png" alt="Main Page" width="300"/>
 - On the main page, you can attach images to your requests.
 - While a request is being processed, you can also cancel it at any time.
 - By clicking the "+" button, you can open a new chat window.
@@ -25,7 +25,7 @@ This is the main interface of the Castle Coder extension, where you can access a
 
 **Chatting Record**<br>
 Here you can see a record of your previous chats and interactions.
-    <img src="./media/세션.png" alt="Chatting Record" width="300"/>
+    <img src="./media/session.png" alt="Chatting Record" width="300"/>
 - In the Chatting Record section, you cannot select the chat session that you are currently using.
 - By clicking the Delete button, you can remove a chat record.
 - The title of each chat session can be set or changed manually by the user.
