@@ -9,6 +9,10 @@
     "type": "git",
     "url": "https://github.com/castle-coder/castle-coder-vscode.git"
   },
+  "bugs": {
+  "url": "https://github.com/castle-coder/castle-coder-vscode/issues"
+  },
+  "homepage": "https://github.com/castle-coder/castle-coder-vscode#readme",
   "engines": {
     "vscode": "^1.96.0"
   },
