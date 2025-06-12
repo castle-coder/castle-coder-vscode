@@ -34,17 +34,14 @@ Here you can see a record of your previous chats and interactions.
 ## Demo
 
 **How to Generate Code**<br>
-<video controls>
-    <source src="https://drive.google.com/file/d/1wdq7taxkSFxhZSxphgCzCWbcOQezvMqY/view?usp=sharing" type="video/mp4">
-</video><br>
+![Security Refactoring Demo](./media/security_refactoring.gif)<br>
 To generate code, simply enter your desired functionality in the prompt.<br>
 You can also specify a name for your code and select the technology stack you want to use.<br>
 If you want to include an image, you can attach it as part of your request
+<br><br>
 
 **How to Refactor Code for Security**<br>
-<video controls>
-    <source src="https://drive.google.com/file/d/102eHWjWKBkVZxEgJ8hwQXFV1P41Bg08u/view?usp=sharing" type="video/mp4">
-</video><br>
+![Code Generation Demo](./media/code_generation.gif)<br>
 To perform security refactoring, right-click on the code you want to improve and select the "Castle Coder: Security Refactoring" option from the context menu.<br>
 The extension will analyze your code for vulnerabilities, apply security improvements, and provide you with both the refactored code and an explanation of the changes.
 
@@ -55,3 +52,6 @@ The extension will analyze your code for vulnerabilities, apply security improve
 
 [survey : experience about 'Castle Coder'](https://docs.google.com/forms/d/e/1FAIpQLSclX3xUzi0s9K-pVpBKE36KTnpGT7jzBk340l6lxUL1N3kZwA/viewform?usp=dialog)
 
+We would greatly appreciate your participation in this survey.
+Your feedback is important to us and will help improve Castle Coder.<br>
+**Thank you** for taking the time to share your thoughts!

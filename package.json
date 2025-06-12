@@ -5,10 +5,6 @@
   "version": "1.0.1",
   "publisher": "YUCHANOH",
   "description": "",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/castle-coder/castle-coder-vscode.git"
-  },
   "engines": {
     "vscode": "^1.96.0"
   },
